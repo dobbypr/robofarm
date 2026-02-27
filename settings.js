@@ -336,3 +336,73 @@ const SETTINGS = {
     help:       'h',   // Show help overlay
   },
 };
+
+(function () {
+  const s = SETTINGS;
+  s.world = s.world || {};
+  s.player = s.player || {};
+  s.time = s.time || {};
+  s.crops = s.crops || {};
+  s.robots = s.robots || {};
+  s.ui = s.ui || {};
+  s.economy = s.economy || {};
+
+  if (s.world.tileSize == null) s.world.tileSize = s.ui.tileSize ?? 32;
+  if (s.world.treeFrequency == null) s.world.treeFrequency = Math.max(0, Math.min(0.25, (s.world.treeClusterCount ?? 10) / 100));
+  if (s.world.rockFrequency == null) s.world.rockFrequency = s.world.stoneDensity ?? 0.015;
+  if (s.world.flowerFrequency == null) s.world.flowerFrequency = s.world.flowerDensity ?? 0.06;
+  if (s.world.farmZoneW == null) s.world.farmZoneW = s.world.clearingW ?? 24;
+  if (s.world.farmZoneH == null) s.world.farmZoneH = s.world.clearingH ?? 18;
+  if (s.world.farmZoneX == null) s.world.farmZoneX = Math.floor((s.player.startX ?? 40) - s.world.farmZoneW / 2);
+  if (s.world.farmZoneY == null) s.world.farmZoneY = Math.floor((s.player.startY ?? 30) - s.world.farmZoneH / 2);
+
+  if (s.player.startCoins == null) s.player.startCoins = s.player.startMoney ?? 500;
+  if (s.player.speed == null) s.player.speed = s.player.moveSpeed ?? 5.5;
+  if (s.player.startSeeds == null) s.player.startSeeds = { wheat: 10, carrot: 5, tomato: 0, blueberry: 0, pumpkin: 0 };
+  if (s.player.startRobots == null) s.player.startRobots = 0;
+
+  if (s.time.ticksPerDay == null) s.time.ticksPerDay = Math.max(1200, Math.round((s.time.dayLengthMs ?? 180000) / (1000 / 60)));
+  if (s.time.seasonLength == null) s.time.seasonLength = s.time.daysPerSeason ?? 28;
+  if (!Array.isArray(s.time.seasons) || s.time.seasons.length === 0) s.time.seasons = ['Spring', 'Summer', 'Autumn', 'Winter'];
+  s.time.seasons = s.time.seasons.map(name => {
+    const m = String(name).match(/[A-Za-z]+/);
+    return m ? m[0] : String(name);
+  });
+  if (s.time.winterEnabled == null) s.time.winterEnabled = true;
+  if (!s.time.rainChance) s.time.rainChance = { Spring: 0.22, Summer: 0.12, Autumn: 0.2, Winter: 0.08 };
+
+  if (!s.display) s.display = {};
+  if (s.display.zoomLevel == null) s.display.zoomLevel = 1;
+  if (s.display.cameraSmooth == null) s.display.cameraSmooth = 0.18;
+  if (s.display.showRobotPath == null) s.display.showRobotPath = s.ui.showRobotPaths ?? true;
+  if (s.display.showNotifications == null) s.display.showNotifications = true;
+  if (s.display.notificationDuration == null) s.display.notificationDuration = 2600;
+  if (!s.display.particleCount) s.display.particleCount = s.ui.particleEffects === false ? 'low' : 'medium';
+
+  const robotBase = s.robots.basic || {};
+  if (s.robots.speed == null) s.robots.speed = robotBase.speed ?? 2.5;
+  if (s.robots.defaultBehavior == null) s.robots.defaultBehavior = 'autoFarm';
+  if (s.robots.workDelay == null) s.robots.workDelay = 22;
+  if (s.robots.batteryMax == null) s.robots.batteryMax = 100;
+  if (s.robots.batteryDrain == null) s.robots.batteryDrain = 0.05;
+  if (s.robots.chargeRate == null) s.robots.chargeRate = 7;
+  if (s.robots.maxRobots == null) s.robots.maxRobots = 30;
+
+  if (!s.economy.seedPrices) s.economy.seedPrices = {};
+  if (!s.economy.cropPrices) s.economy.cropPrices = {};
+  for (const [type, cfg] of Object.entries(s.crops)) {
+    if (cfg.emoji == null) cfg.emoji = cfg.symbol ?? '🌱';
+    if (cfg.waterNeeded == null) cfg.waterNeeded = cfg.waterNeeds ?? 1;
+    if (cfg.stages == null) cfg.stages = 4;
+    if (cfg.growTime == null) cfg.growTime = (cfg.growDays ?? 4) * s.time.ticksPerDay;
+    if (s.economy.seedPrices[type] == null) s.economy.seedPrices[type] = cfg.seedCost ?? 5;
+    if (s.economy.cropPrices[type] == null) s.economy.cropPrices[type] = cfg.sellPrice ?? 10;
+  }
+  if (s.economy.robotCost == null) s.economy.robotCost = robotBase.cost ?? 250;
+  if (s.economy.priceFluctuation == null) s.economy.priceFluctuation = true;
+  if (s.economy.fluctuationAmount == null) s.economy.fluctuationAmount = 0.18;
+  if (s.economy.bulkBonus == null) s.economy.bulkBonus = 1.08;
+
+  if (!s.customBehaviors) s.customBehaviors = s.robotBehaviors || {};
+  window.GAME_SETTINGS = s;
+})();
