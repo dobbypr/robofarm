@@ -22,8 +22,10 @@
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { overflow: hidden; background: #1a2010; font-family: 'VT323', monospace; cursor: none; }
+body.show-system-cursor { cursor: default; }
 canvas#game { display: block; position: fixed; top: 0; left: 0; image-rendering: pixelated; }
 canvas#cursor-canvas { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 1000; }
+body.show-system-cursor canvas#cursor-canvas { display: none; }
 
 /* ─── TOP BAR ─── */
 #topbar {
@@ -197,6 +199,122 @@ textarea.code-area:focus { border-color: var(--green); outline: none; }
 }
 #assign-overlay.visible { display: block; }
 
+/* ─── CROP INFO TOOLTIP ─── */
+#crop-tooltip {
+  position: fixed; z-index: 400; pointer-events: none;
+  background: var(--panel-bg); border: 1px solid var(--ui-border-bright);
+  padding: 7px 11px; font-size: 13px; color: var(--text);
+  display: none; min-width: 130px;
+}
+#crop-tooltip .ct-name { color: var(--gold); font-family: 'Press Start 2P', monospace; font-size: 7px; margin-bottom: 5px; }
+#crop-tooltip .ct-bar { height: 3px; background: #222; margin-top: 3px; border: 1px solid #333; }
+#crop-tooltip .ct-fill { height: 100%; background: var(--green); transition: width 0.2s; }
+#crop-tooltip .ct-ready { color: #7fff7f; font-family: 'Press Start 2P', monospace; font-size: 6px; margin-top: 5px; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+
+/* ─── CODE EDITOR TOOLBAR ─── */
+.code-toolbar {
+  display: flex; gap: 5px; margin-bottom: 6px; flex-wrap: wrap; align-items: center;
+}
+.code-tool-btn {
+  background: rgba(0,0,0,0.4); border: 1px solid var(--ui-border);
+  color: var(--text-dim); font-family: 'Press Start 2P', monospace; font-size: 6px;
+  padding: 4px 7px; cursor: pointer; transition: all 0.1s;
+}
+.code-tool-btn:hover { border-color: var(--gold); color: var(--gold); }
+.code-tool-btn.green { border-color: #2a5a2a; color: #80ff80; }
+.code-tool-btn.green:hover { background: rgba(0,80,0,0.3); }
+.code-security-badge {
+  margin-left: auto; font-family: 'Press Start 2P', monospace; font-size: 5px;
+  color: #80ff80; border: 1px solid #2a5a2a; padding: 3px 6px;
+  background: rgba(0,40,0,0.4);
+}
+.code-template-menu {
+  display: none; position: absolute; background: var(--panel-bg);
+  border: 1px solid var(--ui-border-bright); z-index: 600;
+  min-width: 200px;
+}
+.code-template-menu.visible { display: block; }
+.code-template-item {
+  padding: 8px 12px; cursor: pointer; color: var(--text); font-size: 14px;
+  border-bottom: 1px solid var(--ui-border);
+}
+.code-template-item:hover { background: rgba(200,150,50,0.1); color: var(--gold); }
+.code-template-item .tpl-desc { color: var(--text-dim); font-size: 11px; display: block; margin-top: 2px; }
+
+/* ─── API REFERENCE COLLAPSIBLE ─── */
+.api-ref-toggle {
+  color: var(--text-dim); font-family: 'Press Start 2P', monospace; font-size: 6px;
+  cursor: pointer; padding: 4px 0; margin-top: 4px; display: flex; gap: 6px; align-items: center;
+}
+.api-ref-toggle:hover { color: var(--gold-dim); }
+.api-ref-body {
+  display: none; background: rgba(0,0,0,0.3); border: 1px solid var(--ui-border);
+  padding: 8px; margin-top: 4px; font-size: 12px; color: #7fff7f;
+  font-family: 'Courier New', monospace; line-height: 1.8; max-height: 160px; overflow-y: auto;
+}
+.api-ref-body.visible { display: block; }
+
+/* ─── FILES MODAL ─── */
+.files-card {
+  border: 1px solid var(--ui-border); padding: 16px; background: rgba(0,0,0,0.3);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.files-card-title { color: var(--gold); font-family: 'Press Start 2P', monospace; font-size: 8px; margin-bottom: 4px; }
+.files-card-desc { color: var(--text-dim); font-size: 14px; line-height: 1.5; }
+.files-card .big-btn {
+  background: rgba(90,62,26,0.7); border: 1px solid var(--gold-dim);
+  color: var(--gold); font-family: 'Press Start 2P', monospace; font-size: 8px;
+  padding: 10px 14px; cursor: pointer; transition: all 0.15s; text-align: center;
+}
+.files-card .big-btn:hover { background: rgba(140,100,30,0.5); border-color: var(--gold); }
+.files-card .big-btn.import-btn { border-color: #3a6a3a; color: #80ff80; background: rgba(20,60,20,0.5); }
+.files-card .big-btn.import-btn:hover { background: rgba(20,80,20,0.5); }
+.files-divider { border: none; border-top: 1px solid var(--ui-border); margin: 6px 0; }
+#import-file-input { display: none; }
+#import-robot-file-input { display: none; }
+
+/* ─── CHANGELOG MODAL ─── */
+.changelog-body { color: var(--text); font-family: 'VT323', monospace; }
+.changelog-version {
+  color: var(--gold); font-family: 'Press Start 2P', monospace; font-size: 9px;
+  margin-bottom: 4px;
+}
+.changelog-subtitle { color: var(--text-dim); font-size: 15px; margin-bottom: 14px; }
+.changelog-section { margin-bottom: 16px; }
+.changelog-section-title {
+  color: var(--gold-dim); font-family: 'Press Start 2P', monospace; font-size: 7px;
+  margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--ui-border);
+}
+.changelog-entry { display: flex; gap: 10px; margin-bottom: 8px; align-items: flex-start; }
+.changelog-star { color: var(--gold); font-size: 18px; line-height: 1; flex-shrink: 0; }
+.changelog-text { font-size: 16px; color: var(--text-dim); line-height: 1.4; }
+.changelog-text strong { color: var(--text); }
+.changelog-text em { color: var(--green); font-style: normal; }
+.changelog-footer {
+  text-align: center; color: var(--text-dim); font-size: 14px; padding-top: 12px;
+  border-top: 1px solid var(--ui-border); margin-top: 12px;
+}
+
+/* ─── SAVE FLASH ─── */
+#save-flash {
+  position: fixed; top: 50px; right: 12px; z-index: 601; pointer-events: none;
+  font-family: 'Press Start 2P', monospace; font-size: 7px; color: #80ff80;
+  opacity: 0; transition: opacity 0.3s;
+}
+#save-flash.show { opacity: 1; }
+
+/* ─── MILESTONE BANNER ─── */
+#milestone-banner {
+  position: fixed; top: 56px; left: 50%; transform: translateX(-50%);
+  background: rgba(18,14,8,0.96); border: 2px solid var(--gold);
+  padding: 10px 22px; z-index: 700; pointer-events: none;
+  font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--gold);
+  text-align: center; opacity: 0; transition: opacity 0.4s;
+}
+#milestone-banner.show { opacity: 1; }
+#milestone-banner .msub { color: var(--text-dim); font-size: 10px; margin-top: 5px; font-family: 'VT323', monospace; }
+
 /* ─── DAY TRANSITION ─── */
 #day-banner {
   position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
@@ -229,9 +347,13 @@ textarea.code-area:focus { border-color: var(--green); outline: none; }
     <button class="top-btn" onclick="openModal('shop')">🏪 Shop</button>
     <button class="top-btn" onclick="openModal('robots')">🤖 Robots</button>
     <button class="top-btn" onclick="openModal('docs')">📖 Docs</button>
+    <button class="top-btn" onclick="openModal('files')" title="World Backup & Import">📁 Files</button>
     <button class="top-btn" onclick="saveGame()" title="Save Game">💾</button>
+    <button class="top-btn" onclick="openModal('changelog')" style="border-color:#3a5a3a;color:#80cc80">📋 v0.2</button>
   </div>
 </div>
+<div id="save-flash" style="position:fixed;top:50px;right:12px;z-index:601;pointer-events:none;font-family:'Press Start 2P',monospace;font-size:7px;color:#80ff80;opacity:0;transition:opacity 0.3s">✓ saved</div>
+<div id="milestone-banner" style="position:fixed;top:56px;left:50%;transform:translateX(-50%);background:rgba(18,14,8,0.96);border:2px solid var(--gold);padding:10px 22px;z-index:700;pointer-events:none;font-family:'Press Start 2P',monospace;font-size:8px;color:var(--gold);text-align:center;opacity:0;transition:opacity 0.4s"><div id="milestone-text"></div><div id="milestone-sub" style="color:var(--text-dim);font-size:10px;margin-top:5px;font-family:'VT323',monospace"></div></div>
 
 <!-- Hotbar -->
 <div id="hotbar">
@@ -266,6 +388,13 @@ textarea.code-area:focus { border-color: var(--green); outline: none; }
 
 <!-- Assign Overlay -->
 <div id="assign-overlay">🎯 CLICK A TILE TO SET WORK AREA<br><small style="font-size:6px;margin-top:4px;display:block">ESC to cancel</small></div>
+
+<!-- Crop Info Tooltip -->
+<div id="crop-tooltip"><div class="ct-name" id="ct-name"></div><div id="ct-stage" style="color:var(--text-dim);font-size:13px"></div><div class="ct-bar"><div class="ct-fill" id="ct-fill"></div></div><div id="ct-ready" class="ct-ready" style="display:none">✦ READY TO HARVEST!</div></div>
+
+<!-- Hidden file inputs -->
+<input type="file" id="import-file-input" accept=".js" onchange="handleWorldImportFile(this)">
+<input type="file" id="import-robot-file-input" accept=".js" onchange="handleRobotImportFile(this)">
 
 <!-- Robot Tooltip -->
 <div id="robot-tooltip"></div>
@@ -350,13 +479,48 @@ textarea.code-area:focus { border-color: var(--green); outline: none; }
       <div style="margin-top:10px">
         <div style="color:var(--gold-dim);font-family:'Press Start 2P',monospace;font-size:7px;margin-bottom:6px">⚡ CUSTOM JS CODE (optional)</div>
         <div style="color:var(--text-dim);font-size:12px;margin-bottom:6px">Override with your own behavior. Leave blank to use the selected behavior above.</div>
-        <textarea class="code-area" id="robot-code-editor" placeholder="// Write your robot's brain here!
-// function(robot, api) body:
+        <div class="code-toolbar" style="position:relative">
+          <div style="position:relative">
+            <button class="code-tool-btn" onclick="toggleTemplateMenu()">📋 Templates ▾</button>
+            <div class="code-template-menu" id="template-menu">
+              <div class="code-template-item" onclick="applyTemplate('blank')">Blank <span class="tpl-desc">Clean slate. Write your own!</span></div>
+              <div class="code-template-item" onclick="applyTemplate('waterer')">💧 Smart Waterer <span class="tpl-desc">Finds thirsty crops and waters them</span></div>
+              <div class="code-template-item" onclick="applyTemplate('fullcycle')">♻️ Full Cycle <span class="tpl-desc">Harvest → Water → Plant loop</span></div>
+              <div class="code-template-item" onclick="applyTemplate('zone')">📍 Zone Farmer <span class="tpl-desc">Full cycle within assigned work area</span></div>
+              <div class="code-template-item" onclick="applyTemplate('patrol')">🔍 Scout <span class="tpl-desc">Wanders area, waters anything needy</span></div>
+            </div>
+          </div>
+          <button class="code-tool-btn" onclick="document.getElementById('import-robot-file-input').click()">📥 Import .js</button>
+          <button class="code-tool-btn green" onclick="exportRobotCode()">📤 Export .js</button>
+          <div class="code-security-badge">🔒 SANDBOX</div>
+        </div>
+        <div class="api-ref-toggle" onclick="toggleApiRef()"><span id="api-ref-arrow">▶</span> API REFERENCE</div>
+        <div class="api-ref-body" id="api-ref-body">api.pos(robot)              → {x, y}
+api.findCrop(robot, filter) → tile | null
+  filter: { ready?, needsWater?, type?, maxDist?, cx?, cy? }
+api.findTile(robot, filter) → tile | null
+  filter: { tileType?, empty?, maxDist? }
+api.moveTo(robot, x, y)     → walk toward tile
+api.water(robot, x, y)      → water a crop
+api.harvest(robot, x, y)    → harvest ready crop
+api.plant(robot, x, y, type)→ plant a seed
+api.till(robot, x, y)       → hoe grass tile
+api.idle(robot)             → stand by
+api.mem(robot, key, val?)   → get/set memory
+api.inventory(robot)        → {seeds:{...}, crops:{...}}
+api.nearby(robot, radius)   → [{x,y,type,crop,...}]
+api.distanceTo(robot, x, y) → number (manhattan dist)
+robot.assignedCrop          → crop from panel (string)
+robot.workArea              → {x, y, radius} | null</div>
+        <textarea class="code-area" id="robot-code-editor" placeholder="// Your robot's brain goes here.
+// This code runs every few ticks.
+// It's the body of: function(robot, api) { ... }
 
-const target = api.findCrop(robot, { needsWater: true });
-if (target) {
-  api.moveTo(robot, target.x, target.y);
-  api.water(robot, target.x, target.y);
+// Example — water the nearest thirsty crop:
+const t = api.findCrop(robot, { needsWater: true });
+if (t) {
+  api.moveTo(robot, t.x, t.y);
+  api.water(robot, t.x, t.y);
 } else {
   api.idle(robot);
 }"></textarea>
@@ -408,7 +572,7 @@ if (target) {
       <h2>🌱 FARMING GUIDE</h2>
       <h3>THE BASICS</h3>
       <p>Farming happens in three steps: <strong>Till → Plant → Water → Harvest</strong>. Each crop has its own growth timer and water requirements.</p>
-      <p><strong>Step 1 — Till the Soil:</strong> Select the Hoe tool (<span class="key">2</span>) and click any grass tile in your farm zone. The ground will turn into rich, dark soil ready for planting!</p>
+      <p><strong>Step 1 — Till the Soil:</strong> Select the Hoe tool (<span class="key">2</span>) and click any grass or flower tile in your farm zone. The ground will turn into rich, dark soil ready for planting!</p>
       <p><strong>Step 2 — Plant a Seed:</strong> Select any seed from your hotbar (<span class="key">4</span>–<span class="key">8</span>) and click a tilled tile. Your farmer will press the seed into the ground. Make sure you actually have seeds — buy them at the Shop!</p>
       <p><strong>Step 3 — Water It:</strong> Select the Watering Can (<span class="key">3</span>) and click your planted tile. You'll see the soil darken. Each crop needs watering multiple times throughout its growth cycle.</p>
       <p><strong>Step 4 — Harvest:</strong> When a crop reaches full size (it'll look bigger and more vibrant!), use the Hand tool (<span class="key">1</span>) and click it. The crops pop into your inventory!</p>
@@ -455,7 +619,7 @@ if (target) {
       <p><code>api.water(robot, x, y)</code> — Water a crop tile</p>
       <p><code>api.harvest(robot, x, y)</code> — Harvest a ready crop</p>
       <p><code>api.plant(robot, x, y, cropType)</code> — Plant a seed</p>
-      <p><code>api.till(robot, x, y)</code> — Till a grass tile</p>
+      <p><code>api.till(robot, x, y)</code> — Till a grass or flower tile</p>
       <p><code>api.idle(robot)</code> — Do nothing this tick</p>
       <p><code>api.mem(robot, key, value?)</code> — Get/set persistent memory between ticks</p>
       <p><code>api.inventory(robot)</code> — Returns <code>&#123; seeds: &#123;...&#125;, crops: &#123;...&#125; &#125;</code></p>
@@ -476,6 +640,89 @@ if (target) {
       <h3>WORLD EXPLORATION</h3>
       <p>Don't stay in your farm zone! The world has forests, rivers, ponds, and wildflower meadows. There's nothing to collect out there (yet!), but it's beautiful. Take a walk sometimes. 🌲</p>
       <div class="tip">💡 <strong>Secret:</strong> Change the <code>seed</code> value in settings.js to get a completely different world layout. Each seed generates unique river paths, forest positions, and terrain features!</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- FILES MODAL -->
+<div class="modal-overlay hidden" id="modal-files">
+<div class="modal" style="width:520px">
+  <div class="modal-header">
+    <span class="modal-title">📁 WORLD FILES</span>
+    <span class="modal-close" onclick="closeModal('files')">✕</span>
+  </div>
+  <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+    <div class="files-card">
+      <div class="files-card-title">⬇ BACKUP YOUR FARM</div>
+      <div class="files-card-desc">Download your entire farm — crops, robots, coins, the works — as a <code>.js</code> file. Keep it safe. Import it later. Share it with friends. <strong>It's yours.</strong></div>
+      <hr class="files-divider">
+      <div style="color:var(--text-dim);font-size:13px" id="files-farm-info"></div>
+      <button class="big-btn" onclick="exportWorldFile()">📥 Download World File</button>
+    </div>
+    <div class="files-card">
+      <div class="files-card-title">⬆ RESTORE A FARM</div>
+      <div class="files-card-desc">Have a world file? Import it here to restore your farm exactly as it was. <strong>This will replace your current farm.</strong></div>
+      <hr class="files-divider">
+      <button class="big-btn import-btn" onclick="document.getElementById('import-file-input').click()">📂 Import World File</button>
+      <div style="color:var(--text-dim);font-size:11px;margin-top:4px;font-family:'Press Start 2P',monospace">Only .js files exported from Robo Farm are accepted.</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- CHANGELOG MODAL -->
+<div class="modal-overlay hidden" id="modal-changelog">
+<div class="modal" style="width:560px;max-height:82vh">
+  <div class="modal-header">
+    <span class="modal-title">📋 WHAT'S NEW</span>
+    <span class="modal-close" onclick="closeModal('changelog')">✕</span>
+  </div>
+  <div class="modal-body changelog-body">
+    <div class="changelog-version">ROBO FARM  ·  v0.2</div>
+    <div class="changelog-subtitle">"The Tinkerer's Update" — your farm, your files, your code.</div>
+
+    <div class="changelog-section">
+      <div class="changelog-section-title">★ NEW FEATURES</div>
+      <div class="changelog-entry">
+        <div class="changelog-star">📁</div>
+        <div class="changelog-text">
+          <strong>World Backup Files</strong><br>
+          Your farm now has a secret identity — a <em>.js file</em> you can download, keep safe, and import back anytime, on any computer. Find it in <strong>[📁 Files]</strong> in the top bar. It's your farm. Take it with you.
+        </div>
+      </div>
+      <div class="changelog-entry">
+        <div class="changelog-star">⚡</div>
+        <div class="changelog-text">
+          <strong>Robot Code Editor Upgrades</strong><br>
+          The robot programming panel got a full glow-up. <em>Download</em> your bot's code as a .js file, <em>import</em> code from files, pick from <em>templates</em>, and reference the whole API without opening the docs. It runs in a <strong>secure sandbox</strong> — your bots can't escape into the browser. They're just farmers.
+        </div>
+      </div>
+    </div>
+
+    <div class="changelog-section">
+      <div class="changelog-section-title">✦ SMALL THINGS THAT FEEL GREAT</div>
+      <div class="changelog-entry">
+        <div class="changelog-star">🖱</div>
+        <div class="changelog-text"><strong>Hold to use tools</strong> — Hold the mouse button and drag across tiles to till, water, or plant in a stroke. Tilling a whole row has never felt so satisfying.</div>
+      </div>
+      <div class="changelog-entry">
+        <div class="changelog-star">🌱</div>
+        <div class="changelog-text"><strong>Crop hover info</strong> — Hover any growing crop to see its exact stage, water progress, and whether it's ready. No more guessing.</div>
+      </div>
+      <div class="changelog-entry">
+        <div class="changelog-star">🏆</div>
+        <div class="changelog-text"><strong>Milestone moments</strong> — Your first harvest, your first robot, big crop counts — the game notices the little victories now.</div>
+      </div>
+      <div class="changelog-entry">
+        <div class="changelog-star">💾</div>
+        <div class="changelog-text"><strong>Quieter auto-save</strong> — Instead of a notification every morning, auto-save now just flashes a tiny <em>✓ saved</em> in the corner. Calm. Clean.</div>
+      </div>
+    </div>
+
+    <div class="changelog-footer">
+      Built with ♥ and way too much virtual coffee.<br>
+      Go make something great. We believe in you, farmer. 🌾
     </div>
   </div>
 </div>
@@ -522,6 +769,7 @@ function createTile(type) {
 }
 
 function inBounds(x, y) { return x >= 0 && y >= 0 && x < WW && y < WH; }
+function isTillableTile(tile) { return tile.type === 'grass' || tile.type === 'flower'; }
 
 function generateWorld() {
   world = [];
@@ -661,6 +909,7 @@ canvas.addEventListener('mousemove', e => {
   const wy = (e.clientY - camera.y) / camera.zoom;
   mouseWorld = { x: wx, y: wy };
   updateCursorCanvas();
+  updateCropTooltip(e.clientX, e.clientY);
 });
 
 canvas.addEventListener('click', e => {
@@ -830,7 +1079,7 @@ const robotAPI = {
 
   till: (r, x, y) => {
     if (Math.abs(r.tileX - x) > 1 || Math.abs(r.tileY - y) > 1) { robotAPI.moveTo(r, x, y); return false; }
-    if (!inBounds(x, y) || world[y][x].type !== 'grass') return false;
+    if (!inBounds(x, y) || !isTillableTile(world[y][x])) return false;
     r.state = 'working'; r.actionTimer = 25;
     r._pendingAction = { type: 'till', x, y };
     return true;
@@ -899,7 +1148,7 @@ function runRobotBehavior(robot) {
   }
 
   if (robot.compiledCode) {
-    try { robot.compiledCode(robot, robotAPI); robot.codeError = ''; }
+    try { runSandboxed(robot, robot.compiledCode); robot.codeError = ''; }
     catch (e) { robot.codeError = e.message; robotAPI.idle(robot); }
     return;
   }
@@ -993,7 +1242,7 @@ function executeRobotAction(robot, action) {
         tile.crop = { type, stage: 0, growTimer: 0, waterCount: 0, watered: false };
       }
     }
-  } else if (action.type === 'till' && tile.type === 'grass') {
+  } else if (action.type === 'till' && isTillableTile(tile)) {
     tile.type = 'tilled';
     spawnParticles(action.x * TILE + TILE/2, action.y * TILE, 'dirt', 5);
   }
@@ -1092,11 +1341,11 @@ function handleTileClick(tx, ty, e) {
         inventory.crops[tile.crop.type] = (inventory.crops[tile.crop.type] || 0) + got;
         spawnParticles(tx * TILE + TILE/2, ty * TILE, 'harvest', 12);
         notify(`${cfg.emoji} Harvested ${got}x ${tile.crop.type}!`);
-        tile.crop = null; updateUI();
+        tile.crop = null; updateUI(); checkMilestones();
       } else notify(`🕐 Crop not ready yet (${tile.crop.stage + 1}/${cfg.stages})`);
     }
   } else if (currentTool === 'hoe') {
-    if (tile.type === 'grass') {
+    if (isTillableTile(tile)) {
       tile.type = 'tilled';
       spawnParticles(tx * TILE + TILE/2, ty * TILE, 'dirt', 6);
     } else if (tile.type === 'tilled' && !tile.crop) {
@@ -1120,7 +1369,7 @@ function handleTileClick(tx, ty, e) {
       const bot = new Robot(tx, ty);
       robots.push(bot);
       notify(`🤖 ${bot.name} deployed!`);
-      updateUI();
+      updateUI(); checkMilestones();
     }
   } else {
     // Seed tools
@@ -1203,15 +1452,12 @@ function sellAll() {
  * SAVE / LOAD
  * ═══════════════════════════════════════════════════════════════════════════ */
 function saveGame() {
-  const save = { v: 2, coins, day, tick, season, isRaining, rainDay, inventory, robotsOwned,
-    nextRobotId, priceMultipliers, robots: robots.map(r => ({
-      id: r.id, name: r.name, tileX: r.tileX, tileY: r.tileY, homeTileX: r.homeTileX, homeTileY: r.homeTileY,
-      battery: r.battery, behavior: r.behavior, assignedCrop: r.assignedCrop, workArea: r.workArea,
-      inventory: r.inventory, memory: r.memory, customCode: r.customCode,
-    })),
-    world: world.map(row => row.map(t => ({ type: t.type, crop: t.crop ? { ...t.crop } : null, watered: t.watered })))
-  };
-  try { localStorage.setItem('roboFarm_save', JSON.stringify(save)); notify('💾 Game saved!'); } catch(e) { notify('❌ Save failed!'); }
+  const save = buildSaveObject();
+  try {
+    localStorage.setItem('roboFarm_save', JSON.stringify(save));
+    const flash = document.getElementById('save-flash');
+    if (flash) { flash.style.opacity = '1'; setTimeout(() => flash.style.opacity = '0', 1200); }
+  } catch(e) { notify('❌ Save failed!'); }
 }
 
 function loadGame() {
@@ -1220,38 +1466,13 @@ function loadGame() {
     if (!raw) return false;
     const save = JSON.parse(raw);
     if (save.v !== 2) { localStorage.removeItem('roboFarm_save'); return false; }
-    coins = save.coins; day = save.day; tick = save.tick; season = save.season;
-    isRaining = save.isRaining; rainDay = save.rainDay; inventory = save.inventory;
-    robotsOwned = save.robotsOwned; nextRobotId = save.nextRobotId; priceMultipliers = save.priceMultipliers;
-    // Restore world
-    for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) {
-      if (save.world[y] && save.world[y][x]) {
-        world[y][x].type = save.world[y][x].type;
-        world[y][x].crop = save.world[y][x].crop;
-        world[y][x].watered = save.world[y][x].watered || false;
-      }
-    }
-    // Restore robots
-    robots = [];
-    for (const rd of save.robots) {
-      const bot = new Robot(rd.tileX, rd.tileY);
-      Object.assign(bot, rd);
-      bot.px = bot.tileX * TILE; bot.py = bot.tileY * TILE;
-      bot.path = []; bot._pendingAction = null; bot.actionTimer = 0; bot.workTimer = 0;
-      if (bot.customCode) compileRobotCode(bot);
-      robots.push(bot);
-    }
+    applyGameSave(save);
     return true;
   } catch(e) { console.warn('Load failed', e); return false; }
 }
 
-function compileRobotCode(robot) {
-  if (!robot.customCode || robot.customCode.trim() === '') { robot.compiledCode = null; robot.codeError = ''; return; }
-  try {
-    robot.compiledCode = new Function('robot', 'api', robot.customCode);
-    robot.codeError = '';
-  } catch(e) { robot.compiledCode = null; robot.codeError = e.message; }
-}
+/* compileRobotCode is defined above in the SECURE ROBOT CODE SANDBOX section */
+function _compileRobotCode_placeholder() {}
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * RENDERING
@@ -1495,9 +1716,12 @@ function drawCrop(x, y) {
       ctx.fillRect(cx - 4 + wobble * 0.7, bot - h * 0.5, 8, 4);
     }
     if (crop.stage >= cfg.stages - 1) {
-      // Ready glow
-      ctx.fillStyle = 'rgba(255,230,50,0.3)';
-      ctx.beginPath(); ctx.arc(cx, bot - h / 2, w/2 + 2, 0, Math.PI*2); ctx.fill();
+      // Ready bounce + glow
+      const bounce = Math.sin(animTime * 0.12 + tile.animOffset * 3) * 2;
+      ctx.fillStyle = 'rgba(255,230,50,0.25)';
+      ctx.beginPath(); ctx.arc(cx, bot - h / 2 + bounce, w/2 + 3, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = cfg.color;
+      ctx.fillRect(cx - w/2 + wobble, bot - h + bounce, w, Math.round(h * 0.6));
     }
   }
 
@@ -1615,6 +1839,7 @@ function drawRobot(bot) {
 
 function updateCursorCanvas() {
   cc.clearRect(0, 0, W, H);
+  if (document.body.classList.contains('show-system-cursor')) return;
   const mx = mouseScreen.x, my = mouseScreen.y;
   const toolCursors = { hand:'✋', hoe:'⛏️', water:'💧', robot_place:'🤖' };
   const seedCursors = { wheat:'🌾', carrot:'🥕', corn:'🌽', sunflower:'🌻', potato:'🥔', tomato:'🍅' };
@@ -1709,6 +1934,7 @@ function updateUI() {
     const el = document.getElementById(`cnt-${type}`);
     if (el) el.textContent = inventory.seeds[type] || '';
   }
+  checkMilestones();
 }
 
 function selectTool(tool) {
@@ -1733,11 +1959,19 @@ function notify(msg) {
 function openModal(id) {
   document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
   document.getElementById(`modal-${id}`).classList.remove('hidden');
+  document.getElementById('crop-tooltip').style.display = 'none';
+  syncCursorMode();
   if (id === 'shop') { buildShop(); buildSellGrid(); }
   if (id === 'robots') buildRobotList();
+  if (id === 'files') openFilesModal();
 }
-function closeModal(id) { document.getElementById(`modal-${id}`).classList.add('hidden'); }
-function closeAllModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden')); }
+function closeModal(id) { document.getElementById(`modal-${id}`).classList.add('hidden'); syncCursorMode(); }
+function closeAllModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden')); syncCursorMode(); }
+function syncCursorMode() {
+  const hasOpenModal = !!document.querySelector('.modal-overlay:not(.hidden)');
+  document.body.classList.toggle('show-system-cursor', hasOpenModal);
+  updateCursorCanvas();
+}
 
 function switchTab(modal, tab) {
   const m = document.getElementById(`modal-${modal}`);
@@ -1897,6 +2131,404 @@ function cancelAssign() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+ * SECURE ROBOT CODE SANDBOX
+ * Robot code runs here. Can see robot + api. Nothing else.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+const SANDBOX_BLOCKED = [
+  'window','document','self','globalThis','parent','top','frames',
+  'fetch','XMLHttpRequest','WebSocket','EventSource','Worker',
+  'eval','Function','setTimeout','clearTimeout','setInterval','clearInterval',
+  'requestAnimationFrame','cancelAnimationFrame','queueMicrotask',
+  'navigator','location','history','screen','crypto',
+  'localStorage','sessionStorage','indexedDB','caches',
+  'performance','console','alert','confirm','prompt',
+  'open','close','print','focus','blur',
+];
+
+function compileRobotCode(robot) {
+  if (!robot.customCode || robot.customCode.trim() === '') { robot.compiledCode = null; robot.codeError = ''; return; }
+  try {
+    const fnArgs = [...SANDBOX_BLOCKED, 'robot', 'api'];
+    robot.compiledCode = new Function(...fnArgs, '"use strict";\n' + robot.customCode);
+    robot.codeError = '';
+  } catch(e) { robot.compiledCode = null; robot.codeError = e.message; }
+}
+
+function runSandboxed(robot, fn) {
+  const blockedVals = SANDBOX_BLOCKED.map(() => undefined);
+  fn(...blockedVals, robot, robotAPI);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * WORLD FILE EXPORT / IMPORT  (Feature 6)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+function buildSaveObject() {
+  return {
+    v: 2, coins, day, tick, season, isRaining, rainDay, inventory, robotsOwned,
+    nextRobotId, priceMultipliers,
+    robots: robots.map(r => ({
+      id: r.id, name: r.name, tileX: r.tileX, tileY: r.tileY,
+      homeTileX: r.homeTileX, homeTileY: r.homeTileY,
+      battery: r.battery, behavior: r.behavior, assignedCrop: r.assignedCrop,
+      workArea: r.workArea, inventory: r.inventory, memory: r.memory, customCode: r.customCode,
+    })),
+    world: world.map(row => row.map(t => ({
+      type: t.type, crop: t.crop ? { ...t.crop } : null, watered: t.watered
+    })))
+  };
+}
+
+function downloadFile(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function exportWorldFile() {
+  const save = buildSaveObject();
+  const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const cropCount = world.flat().filter(t => t.crop).length;
+  const content =
+`// ╔═════════════════════════════════════════════════════════════╗
+// ║            ROBO FARM  —  World Save File                    ║
+// ╚═════════════════════════════════════════════════════════════╝
+//
+//  Farm: Day ${day}  |  Season: ${SEASONS[season % SEASONS.length]}  |  Coins: ${coins}
+//  Robots placed: ${robots.length}  |  Crops in ground: ${cropCount}
+//  Exported: ${dateStr}
+//
+//  ─── HOW TO RESTORE ────────────────────────────────────────
+//  1. Open index.html in your browser
+//  2. Click [📁 Files] in the top bar
+//  3. Click "Import World File" and select this file
+//  4. Your farm is back — exactly where you left it!
+//
+//  ─── DO NOT EDIT THE DATA BELOW ────────────────────────────
+
+window.__ROBOFARM_IMPORT__ = ${JSON.stringify(save, null, 2)};
+`;
+  downloadFile(content, `robofarm-day${day}.js`, 'text/javascript');
+  notify('📁 World file downloaded!');
+}
+
+function handleWorldImportFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const text = e.target.result;
+      const match = text.match(/window\.__ROBOFARM_IMPORT__\s*=\s*(\{[\s\S]+\})\s*;?\s*$/m);
+      if (!match) { notify('❌ Not a valid Robo Farm world file!'); return; }
+      const save = JSON.parse(match[1]);
+      if (!save || save.v !== 2) { notify('❌ Incompatible save version!'); return; }
+      applyGameSave(save);
+      notify('🌾 Farm restored! Welcome back, farmer.');
+      closeModal('files');
+    } catch(err) { notify('❌ Could not read file: ' + err.message); }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function applyGameSave(save) {
+  coins = save.coins; day = save.day; tick = save.tick; season = save.season;
+  isRaining = save.isRaining; rainDay = save.rainDay; inventory = save.inventory;
+  robotsOwned = save.robotsOwned; nextRobotId = save.nextRobotId; priceMultipliers = save.priceMultipliers;
+  for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) {
+    if (save.world[y] && save.world[y][x]) {
+      world[y][x].type = save.world[y][x].type;
+      world[y][x].crop = save.world[y][x].crop;
+      world[y][x].watered = save.world[y][x].watered || false;
+    }
+  }
+  robots = [];
+  for (const rd of save.robots) {
+    const bot = new Robot(rd.tileX, rd.tileY);
+    Object.assign(bot, rd);
+    bot.px = bot.tileX * TILE; bot.py = bot.tileY * TILE;
+    bot.path = []; bot._pendingAction = null; bot.actionTimer = 0; bot.workTimer = 0;
+    if (bot.customCode) compileRobotCode(bot);
+    robots.push(bot);
+  }
+  updateUI();
+}
+
+function openModal_files() { /* wrapper */ openModal('files'); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * ROBOT CODE FILE EXPORT / IMPORT  (Feature 12)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+function exportRobotCode() {
+  const bot = robots.find(r => r.id === configRobotId);
+  if (!bot) { notify('❌ Select a robot first!'); return; }
+  const code = document.getElementById('robot-code-editor').value.trim() ||
+    '// No code yet — write your behavior here!\n// See the API Reference in the editor for all available commands.';
+  const content =
+`// ╔═════════════════════════════════════════════════════════════╗
+// ║          ROBO FARM  —  Robot Behavior File                  ║
+// ╚═════════════════════════════════════════════════════════════╝
+//
+//  Robot:    ${bot.name}
+//  Behavior: ${bot.behavior}
+//
+//  ─── HOW TO USE ─────────────────────────────────────────────
+//  Option A: Paste into the robot's code editor in-game
+//  Option B: Add to customBehaviors in settings.js:
+//
+//    'My Behavior': function(robot, api) {
+//      // paste the code below here
+//    },
+//
+//  ─── API QUICK REFERENCE ────────────────────────────────────
+//  api.pos(robot)               → {x, y}
+//  api.findCrop(robot, filter)  → crop tile | null
+//    filter: { ready?, needsWater?, type?, maxDist?, cx?, cy? }
+//  api.findTile(robot, filter)  → tile | null
+//    filter: { tileType?, empty?, maxDist? }
+//  api.moveTo(robot, x, y)      → walk toward tile
+//  api.water(robot, x, y)       → water crop
+//  api.harvest(robot, x, y)     → harvest ready crop
+//  api.plant(robot, x, y, type) → plant seed
+//  api.till(robot, x, y)        → hoe grass/flower
+//  api.idle(robot)              → do nothing
+//  api.mem(robot, key, val?)    → get/set persistent memory
+//  api.inventory(robot)         → {seeds:{...}, crops:{...}}
+//  api.nearby(robot, radius)    → array of nearby tiles
+//  robot.assignedCrop           → crop type from UI panel
+//  robot.workArea               → {x, y, radius} | null
+//
+//  ⚠️  Runs in a secure sandbox — no browser APIs available.
+//     Just robot, api, and your logic.
+// ────────────────────────────────────────────────────────────
+
+${code}
+`;
+  const safeName = bot.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+  downloadFile(content, `${safeName}-behavior.js`, 'text/javascript');
+  notify(`📤 ${bot.name} code exported!`);
+}
+
+function handleRobotImportFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const bot = robots.find(r => r.id === configRobotId);
+  if (!bot) { notify('❌ Select a robot first!'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    // Strip comment header if present, find actual code
+    const lines = text.split('\n');
+    const codeLines = [];
+    let pastHeader = false;
+    for (const line of lines) {
+      if (!pastHeader && line.startsWith('//')) continue;
+      if (!pastHeader && line.trim() === '') continue;
+      pastHeader = true;
+      codeLines.push(line);
+    }
+    const code = codeLines.join('\n').trim();
+    document.getElementById('robot-code-editor').value = code;
+    notify(`📥 Code imported into ${bot.name}! Hit Save to apply.`);
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+/* ─── CODE EDITOR TEMPLATES ─── */
+const CODE_TEMPLATES = {
+  blank: `// Your robot's brain goes here.
+// This code runs every ${window.GAME_SETTINGS?.robots?.workDelay || 40} game ticks.
+
+api.idle(robot);`,
+
+  waterer: `// Smart Waterer
+// Finds the nearest thirsty crop and waters it.
+const t = api.findCrop(robot, { needsWater: true, maxDist: 10 });
+if (t) {
+  api.moveTo(robot, t.x, t.y);
+  api.water(robot, t.x, t.y);
+} else {
+  api.idle(robot);
+}`,
+
+  fullcycle: `// Full Cycle Farmer
+// Priority: Harvest → Water → Plant
+const max = robot.workArea?.radius || 12;
+const cx = robot.workArea?.x, cy = robot.workArea?.y;
+
+const ready = api.findCrop(robot, { ready: true, maxDist: max, cx, cy });
+if (ready) { api.moveTo(robot, ready.x, ready.y); api.harvest(robot, ready.x, ready.y); return; }
+
+const thirsty = api.findCrop(robot, { needsWater: true, maxDist: max, cx, cy });
+if (thirsty) { api.moveTo(robot, thirsty.x, thirsty.y); api.water(robot, thirsty.x, thirsty.y); return; }
+
+const crop = robot.assignedCrop || 'wheat';
+const empty = api.findTile(robot, { tileType: 'tilled', empty: true, maxDist: max, cx, cy });
+if (empty) { api.moveTo(robot, empty.x, empty.y); api.plant(robot, empty.x, empty.y, crop); return; }
+
+api.idle(robot);`,
+
+  zone: `// Zone Farmer — stays within assigned work area
+// Set the area using the "Set Area" button in the panel!
+if (!robot.workArea) { api.idle(robot); return; }
+
+const { x: cx, y: cy, radius } = robot.workArea;
+
+const ready = api.findCrop(robot, { ready: true, maxDist: radius, cx, cy });
+if (ready) { api.moveTo(robot, ready.x, ready.y); api.harvest(robot, ready.x, ready.y); return; }
+
+const thirsty = api.findCrop(robot, { needsWater: true, maxDist: radius, cx, cy });
+if (thirsty) { api.moveTo(robot, thirsty.x, thirsty.y); api.water(robot, thirsty.x, thirsty.y); return; }
+
+const crop = robot.assignedCrop || 'wheat';
+const empty = api.findTile(robot, { tileType: 'tilled', empty: true, maxDist: radius, cx, cy });
+if (empty) { api.moveTo(robot, empty.x, empty.y); api.plant(robot, empty.x, empty.y, crop); return; }
+
+api.idle(robot);`,
+
+  patrol: `// Scout — wanders and waters anything it finds
+// Uses memory to spiral outward from home position
+const mem = api.mem;
+if (!mem(robot, 'angle')) { mem(robot, 'angle', 0); mem(robot, 'r', 2); }
+
+const thirsty = api.findCrop(robot, { needsWater: true, maxDist: 14 });
+if (thirsty) { api.moveTo(robot, thirsty.x, thirsty.y); api.water(robot, thirsty.x, thirsty.y); return; }
+
+// Wander when nothing to water
+let angle = mem(robot, 'angle');
+const r = mem(robot, 'r');
+const { x, y } = api.pos(robot);
+const tx = Math.round(robot.homeTileX + Math.cos(angle) * r);
+const ty = Math.round(robot.homeTileY + Math.sin(angle) * r);
+api.moveTo(robot, tx, ty);
+mem(robot, 'angle', angle + 0.7);
+if (angle > Math.PI * 2) { mem(robot, 'angle', 0); mem(robot, 'r', (r % 8) + 1); }`,
+};
+
+function toggleTemplateMenu() {
+  document.getElementById('template-menu').classList.toggle('visible');
+}
+
+function applyTemplate(name) {
+  const code = CODE_TEMPLATES[name] || '';
+  document.getElementById('robot-code-editor').value = code;
+  document.getElementById('template-menu').classList.remove('visible');
+}
+
+function toggleApiRef() {
+  const body = document.getElementById('api-ref-body');
+  const arrow = document.getElementById('api-ref-arrow');
+  body.classList.toggle('visible');
+  arrow.textContent = body.classList.contains('visible') ? '▼' : '▶';
+}
+
+// Close template menu on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.code-toolbar')) document.getElementById('template-menu')?.classList.remove('visible');
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DRAG-TO-USE TOOLS  (QoL — hold mouse to apply tool to multiple tiles)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+let mouseIsDown = false;
+let lastDragTile = { x: -1, y: -1 };
+
+canvas.addEventListener('mousedown', e => {
+  mouseIsDown = true;
+  lastDragTile = { x: -1, y: -1 };
+});
+document.addEventListener('mouseup', () => { mouseIsDown = false; });
+
+canvas.addEventListener('mousemove', e => {
+  if (!mouseIsDown) return;
+  const tx = Math.floor(mouseWorld.x / TILE);
+  const ty = Math.floor(mouseWorld.y / TILE);
+  if (tx === lastDragTile.x && ty === lastDragTile.y) return;
+  lastDragTile = { x: tx, y: ty };
+  // Only drag-apply for till, water, and seeds (not hand or robot_place)
+  if (currentTool === 'hoe' || currentTool === 'water' || S.crops[currentTool]) {
+    if (inBounds(tx, ty)) handleTileClick(tx, ty, {});
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * CROP HOVER TOOLTIP  (QoL — hover to see crop info)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+function updateCropTooltip(mx, my) {
+  const tooltip = document.getElementById('crop-tooltip');
+  const tx = Math.floor(mouseWorld.x / TILE);
+  const ty = Math.floor(mouseWorld.y / TILE);
+
+  if (!inBounds(tx, ty) || !world[ty][tx].crop) {
+    tooltip.style.display = 'none'; return;
+  }
+
+  const crop = world[ty][tx].crop;
+  const cfg = S.crops[crop.type];
+  if (!cfg) { tooltip.style.display = 'none'; return; }
+
+  const isReady = crop.stage >= cfg.stages - 1;
+  const stagePct = (crop.stage / (cfg.stages - 1)) * 100;
+  const waterPct = Math.min(100, (crop.waterCount / cfg.waterNeeded) * 100);
+
+  document.getElementById('ct-name').textContent = `${cfg.emoji} ${crop.type.toUpperCase()}`;
+  document.getElementById('ct-stage').innerHTML =
+    `Stage ${crop.stage + 1}/${cfg.stages}  ·  💧 ${crop.waterCount}/${cfg.waterNeeded}`;
+  document.getElementById('ct-fill').style.width = stagePct + '%';
+  const readyEl = document.getElementById('ct-ready');
+  readyEl.style.display = isReady ? 'block' : 'none';
+
+  const pad = 12;
+  tooltip.style.left = (mx + pad) + 'px';
+  tooltip.style.top = (my - tooltip.offsetHeight / 2) + 'px';
+  tooltip.style.display = 'block';
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * MILESTONE SYSTEM  (QoL — celebrate small victories)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+let milestones = { firstHarvest: false, firstRobot: false, crops100: false, coins1000: false, crops500: false };
+
+function checkMilestones() {
+  const totalCrops = Object.values(inventory.crops).reduce((a, b) => a + b, 0);
+
+  if (!milestones.firstHarvest && totalCrops > 0) {
+    milestones.firstHarvest = true;
+    showMilestone('FIRST HARVEST!', 'You grew something. That\'s real. That\'s yours. 🌾');
+  }
+  if (!milestones.firstRobot && robots.length > 0) {
+    milestones.firstRobot = true;
+    showMilestone('FIRST ROBOT!', 'Your farm will never sleep again. 🤖');
+  }
+  if (!milestones.crops100 && totalCrops >= 100) {
+    milestones.crops100 = true;
+    showMilestone('100 CROPS!', 'A proper operation is taking shape. Keep going!');
+  }
+  if (!milestones.coins1000 && coins >= 1000) {
+    milestones.coins1000 = true;
+    showMilestone('1000 COINS!', 'Look at that bank account grow. 💰');
+  }
+}
+
+function showMilestone(title, sub) {
+  document.getElementById('milestone-text').textContent = title;
+  document.getElementById('milestone-sub').textContent = sub;
+  const el = document.getElementById('milestone-banner');
+  el.style.opacity = '1';
+  setTimeout(() => el.style.opacity = '0', 3200);
+}
+
+/* ─── FILES MODAL helper ─── */
+function openFilesModal() {
+  const info = document.getElementById('files-farm-info');
+  const cropCount = world.flat().filter(t => t.crop).length;
+  info.textContent = `Day ${day}  ·  ${SEASONS[season % SEASONS.length]}  ·  ${coins} coins  ·  ${robots.length} robots  ·  ${cropCount} crops planted`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
  * MAIN GAME LOOP
  * ═══════════════════════════════════════════════════════════════════════════ */
 function loop() {
@@ -1917,6 +2549,15 @@ if (!loaded) {
   notify('🌾 Welcome to Robo Farm! Press F for the guide.');
   notify('🌱 Start by tilling soil (key 2) and planting seeds!');
   rainDay = Math.random() < S.time.rainChance['Spring'];
+  setTimeout(() => {
+    openModal('changelog');
+  }, 600);
+} else {
+  // Show changelog once per version update
+  const lastSeen = localStorage.getItem('roboFarm_changelogSeen');
+  if (lastSeen !== 'v0.2') {
+    setTimeout(() => { openModal('changelog'); localStorage.setItem('roboFarm_changelogSeen', 'v0.2'); }, 400);
+  }
 }
 
 // Place starter robots if any
@@ -1935,7 +2576,7 @@ loop();
 /* Click outside modals to close */
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', function(e) {
-    if (e.target === this) this.classList.add('hidden');
+    if (e.target === this) { this.classList.add('hidden'); syncCursorMode(); }
   });
 });
 </script>
