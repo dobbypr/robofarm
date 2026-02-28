@@ -296,6 +296,74 @@ textarea.code-area:focus { border-color: var(--green); outline: none; }
   border-top: 1px solid var(--ui-border); margin-top: 12px;
 }
 
+/* ─── ECONOMY MODAL ─── */
+.economy-modal { min-width: 720px; max-width: 860px; }
+.company-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.company-card {
+  border: 1px solid var(--ui-border); padding: 14px;
+  background: rgba(0,0,0,0.5); position: relative; overflow: hidden;
+}
+.company-card.rfs  { border-color: #4a9c3f; background: linear-gradient(135deg, #060e04 0%, #0d1c0a 100%); }
+.company-card.bupop { border-color: #3a7abb; background: linear-gradient(135deg, #04091a 0%, #081428 100%); }
+.company-logo { font-size: 26px; margin-bottom: 4px; }
+.company-name-sm { font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--text-dim); margin-bottom: 2px; }
+.company-ticker { font-family: 'Press Start 2P', monospace; font-size: 10px; margin-bottom: 3px; }
+.company-ticker.rfs  { color: #4a9c3f; }
+.company-ticker.bupop { color: #3a7abb; }
+.company-tagline { color: var(--text-dim); font-size: 12px; margin-bottom: 8px; font-style: italic; }
+.stock-price { font-family: 'Press Start 2P', monospace; font-size: 10px; color: var(--gold); }
+.stock-change { font-family: 'Press Start 2P', monospace; font-size: 7px; margin-left: 5px; }
+.stock-change.up   { color: #4a9c3f; }
+.stock-change.down { color: #c44040; }
+.sparkline-wrap { width: 100%; height: 50px; margin: 8px 0; position: relative; }
+.sparkline-wrap canvas { width: 100%; height: 100%; display: block; }
+.shares-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-dim); margin: 4px 0; }
+.shares-val { color: var(--gold); font-family: 'Press Start 2P', monospace; font-size: 7px; }
+.dividend-info { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; }
+.trade-row { display: flex; gap: 5px; margin-top: 8px; align-items: center; }
+.trade-input {
+  background: rgba(0,0,0,0.5); border: 1px solid var(--ui-border);
+  color: var(--text); font-family: 'VT323', monospace; font-size: 16px;
+  padding: 3px 6px; width: 64px;
+}
+.trade-input:focus { border-color: var(--gold); outline: none; }
+.chart-wrap { position: relative; margin-top: 8px; }
+.chart-wrap canvas { width: 100%; display: block; }
+.chart-scanlines {
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px);
+  pointer-events: none;
+}
+.chart-toggle-row { display: flex; gap: 6px; margin-bottom: 8px; }
+.chart-toggle-btn {
+  padding: 4px 10px; border: 1px solid var(--ui-border);
+  background: transparent; color: var(--text-dim);
+  font-family: 'Press Start 2P', monospace; font-size: 7px; cursor: pointer;
+}
+.chart-toggle-btn.active-rfs   { border-color: #4a9c3f; color: #4a9c3f; background: rgba(74,156,63,0.1); }
+.chart-toggle-btn.active-bupop { border-color: #3a7abb; color: #3a7abb; background: rgba(58,122,187,0.1); }
+.prod-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.prod-stat-card { border: 1px solid var(--ui-border); padding: 10px; text-align: center; background: rgba(0,0,0,0.3); }
+.prod-stat-val { color: var(--gold); font-family: 'Press Start 2P', monospace; font-size: 10px; display: block; margin-bottom: 4px; }
+.prod-stat-lbl { color: var(--text-dim); font-size: 12px; }
+.perk-list { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
+.perk-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--ui-border); }
+.perk-item.unlocked     { border-color: #4a9c3f; background: rgba(74,156,63,0.08); }
+.perk-item.unlocked.bp  { border-color: #3a7abb; background: rgba(58,122,187,0.08); }
+.perk-badge { font-family: 'Press Start 2P', monospace; font-size: 6px; padding: 2px 5px; border: 1px solid; white-space: nowrap; }
+.perk-badge.locked   { color: var(--text-dim); border-color: var(--ui-border); }
+.perk-badge.unlocked { color: #7fff7f; border-color: #4a9c3f; }
+.perk-badge.unlocked.bp { color: #64b0ff; border-color: #3a7abb; }
+.perk-name { color: var(--text); font-size: 13px; flex: 1; }
+.perk-req  { color: var(--text-dim); font-size: 11px; }
+.co-profile { border: 1px solid var(--ui-border); padding: 14px; margin-bottom: 12px; }
+.co-profile.rfs   { border-color: #4a9c3f; background: linear-gradient(135deg,#060e04,#0d1c0a); }
+.co-profile.bupop { border-color: #3a7abb; background: linear-gradient(135deg,#04091a,#081428); }
+.co-profile-hdr { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.co-profile-logo { font-size: 30px; }
+.co-profile-fullname { color: var(--text); font-family: 'Press Start 2P', monospace; font-size: 7px; }
+.co-profile-subtitle { color: var(--text-dim); font-size: 13px; margin-top: 3px; font-style: italic; }
+
 /* ─── SAVE FLASH ─── */
 #save-flash {
   position: fixed; top: 50px; right: 12px; z-index: 601; pointer-events: none;
@@ -349,6 +417,7 @@ textarea.code-area:focus { border-color: var(--green); outline: none; }
     <button class="top-btn" onclick="openModal('docs')">📖 Docs</button>
     <button class="top-btn" onclick="openModal('files')" title="World Backup & Import">📁 Files</button>
     <button class="top-btn" onclick="saveGame()" title="Save Game">💾</button>
+    <button class="top-btn" onclick="openModal('economy')" style="border-color:#4a7a3a;color:#80d060">📈 Economy</button>
     <button class="top-btn" onclick="openModal('changelog')" style="border-color:#3a5a3a;color:#80cc80">📋 v0.2</button>
   </div>
 </div>
@@ -728,6 +797,200 @@ if (t) {
 </div>
 </div>
 
+<!-- ECONOMY MODAL -->
+<div class="modal-overlay hidden" id="modal-economy">
+<div class="modal economy-modal" style="width:780px;max-height:88vh">
+  <div class="modal-header">
+    <span class="modal-title">📈 ECONOMY &amp; MARKETS</span>
+    <span class="modal-close" onclick="closeModal('economy')">✕</span>
+  </div>
+  <div class="modal-body">
+    <div class="modal-tabs">
+      <button class="tab-btn active" onclick="switchTab('economy','market');refreshEconomyUI()">Market</button>
+      <button class="tab-btn" onclick="switchTab('economy','charts');refreshEconomyUI()">Charts</button>
+      <button class="tab-btn" onclick="switchTab('economy','production');refreshEconomyUI()">Production</button>
+      <button class="tab-btn" onclick="switchTab('economy','companies')">Companies</button>
+    </div>
+
+    <!-- TAB: MARKET -->
+    <div id="economy-tab-market" class="tab-content active">
+      <div class="company-cards">
+        <!-- RFS card -->
+        <div class="company-card rfs">
+          <div class="company-logo">🤖🌾</div>
+          <div class="company-name-sm">Robot Farming Society</div>
+          <div class="company-ticker rfs">RFS</div>
+          <div class="company-tagline">"By the land. For the land."</div>
+          <div style="margin-bottom:4px">
+            <span class="stock-price" id="econ-rfs-price">48</span>
+            <span class="stock-change" id="econ-rfs-change">—</span>
+          </div>
+          <div class="sparkline-wrap"><canvas id="sparkline-rfs"></canvas></div>
+          <div class="shares-row">
+            <span>Shares owned</span>
+            <span class="shares-val" id="econ-rfs-shares">0</span>
+          </div>
+          <div class="shares-row">
+            <span>Portfolio value</span>
+            <span class="shares-val" id="econ-rfs-value">0</span>
+          </div>
+          <div class="dividend-info" id="econ-rfs-div">Dividend: 0.8/share/day</div>
+          <div class="trade-row">
+            <input class="trade-input" type="number" min="1" value="1" id="rfs-qty" placeholder="qty">
+            <button class="game-btn primary" onclick="buyShares('rfs', document.getElementById('rfs-qty').value)">Buy</button>
+            <button class="game-btn" onclick="sellShares('rfs', document.getElementById('rfs-qty').value)">Sell</button>
+          </div>
+          <div style="color:var(--text-dim);font-size:11px;margin-top:6px" id="econ-rfs-cost">Cost: —</div>
+        </div>
+        <!-- BuPop card -->
+        <div class="company-card bupop">
+          <div class="company-logo">🏢</div>
+          <div class="company-name-sm">BuPop Inc.</div>
+          <div class="company-ticker bupop">BPOP</div>
+          <div class="company-tagline">"Your harvest. Our profit."</div>
+          <div style="margin-bottom:4px">
+            <span class="stock-price" id="econ-bupop-price">128</span>
+            <span class="stock-change" id="econ-bupop-change">—</span>
+          </div>
+          <div class="sparkline-wrap"><canvas id="sparkline-bupop"></canvas></div>
+          <div class="shares-row">
+            <span>Shares owned</span>
+            <span class="shares-val" id="econ-bupop-shares">0</span>
+          </div>
+          <div class="shares-row">
+            <span>Portfolio value</span>
+            <span class="shares-val" id="econ-bupop-value">0</span>
+          </div>
+          <div class="dividend-info" id="econ-bupop-div">Dividend: 1.5/share/day</div>
+          <div class="trade-row">
+            <input class="trade-input" type="number" min="1" value="1" id="bupop-qty" placeholder="qty">
+            <button class="game-btn primary" onclick="buyShares('bupop', document.getElementById('bupop-qty').value)">Buy</button>
+            <button class="game-btn" onclick="sellShares('bupop', document.getElementById('bupop-qty').value)">Sell</button>
+          </div>
+          <div style="color:var(--text-dim);font-size:11px;margin-top:6px" id="econ-bupop-cost">Cost: —</div>
+        </div>
+      </div>
+      <div style="color:var(--text-dim);font-size:12px;margin-top:10px;padding:6px 8px;border:1px solid var(--ui-border)">
+        💹 Prices update daily. Earn dividends every morning. Owning shares unlocks perks — see <strong>Companies</strong> tab.
+      </div>
+    </div>
+
+    <!-- TAB: CHARTS -->
+    <div id="economy-tab-charts" class="tab-content">
+      <div class="chart-toggle-row">
+        <button class="chart-toggle-btn active-rfs" id="chart-btn-rfs" onclick="setChartView('rfs')">🤖🌾 RFS</button>
+        <button class="chart-toggle-btn" id="chart-btn-bupop" onclick="setChartView('bupop')">🏢 BPOP</button>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="price-chart-canvas" height="200"></canvas>
+        <div class="chart-scanlines"></div>
+      </div>
+      <div style="color:var(--text-dim);font-size:12px;margin-top:6px" id="chart-label">30-day price history</div>
+    </div>
+
+    <!-- TAB: PRODUCTION -->
+    <div id="economy-tab-production" class="tab-content">
+      <div class="prod-stats-grid">
+        <div class="prod-stat-card">
+          <span class="prod-stat-val" id="prod-income">0</span>
+          <span class="prod-stat-lbl">Today's income</span>
+        </div>
+        <div class="prod-stat-card">
+          <span class="prod-stat-val" id="prod-harvested">0</span>
+          <span class="prod-stat-lbl">Crops harvested</span>
+        </div>
+        <div class="prod-stat-card">
+          <span class="prod-stat-val" id="prod-robot-harvests">0</span>
+          <span class="prod-stat-lbl">Robot harvests</span>
+        </div>
+      </div>
+      <div style="color:var(--gold-dim);font-family:'Press Start 2P',monospace;font-size:7px;margin-bottom:8px">DAILY INCOME (LAST 14 DAYS)</div>
+      <div class="chart-wrap">
+        <canvas id="income-chart-canvas" height="140"></canvas>
+        <div class="chart-scanlines"></div>
+      </div>
+    </div>
+
+    <!-- TAB: COMPANIES -->
+    <div id="economy-tab-companies" class="tab-content">
+      <!-- RFS profile -->
+      <div class="co-profile rfs">
+        <div class="co-profile-hdr">
+          <div class="co-profile-logo">🤖🌾</div>
+          <div>
+            <div class="co-profile-fullname">Robot Farming Society</div>
+            <div class="co-profile-subtitle">Ticker: RFS · Dividend: 0.8/share/day · Vol: 6.5%</div>
+          </div>
+        </div>
+        <div style="color:var(--text-dim);font-size:13px;margin-bottom:10px">
+          A decentralized cooperative of autonomous farming robots. Price is driven by your robot fleet size and robot harvest activity. More bots, more value.
+        </div>
+        <div style="color:var(--gold-dim);font-family:'Press Start 2P',monospace;font-size:6px;margin-bottom:6px">PERKS (CUMULATIVE)</div>
+        <div class="perk-list" id="rfs-perks">
+          <div class="perk-item" id="rfs-perk-0">
+            <span class="perk-badge locked" id="rfs-badge-0">LOCKED</span>
+            <span class="perk-name">Member — robots drain 10% less battery</span>
+            <span class="perk-req">5 shares</span>
+          </div>
+          <div class="perk-item" id="rfs-perk-1">
+            <span class="perk-badge locked" id="rfs-badge-1">LOCKED</span>
+            <span class="perk-name">Contributor — robots move 15% faster</span>
+            <span class="perk-req">15 shares</span>
+          </div>
+          <div class="perk-item" id="rfs-perk-2">
+            <span class="perk-badge locked" id="rfs-badge-2">LOCKED</span>
+            <span class="perk-name">Stakeholder — +1 max robot slot</span>
+            <span class="perk-req">30 shares</span>
+          </div>
+          <div class="perk-item" id="rfs-perk-3">
+            <span class="perk-badge locked" id="rfs-badge-3">LOCKED</span>
+            <span class="perk-name">Board Member — robot work delay −25%</span>
+            <span class="perk-req">50 shares</span>
+          </div>
+        </div>
+      </div>
+      <!-- BuPop profile -->
+      <div class="co-profile bupop">
+        <div class="co-profile-hdr">
+          <div class="co-profile-logo">🏢</div>
+          <div>
+            <div class="co-profile-fullname">BuPop Inc.</div>
+            <div class="co-profile-subtitle">Ticker: BPOP · Dividend: 1.5/share/day · Vol: 4%</div>
+          </div>
+        </div>
+        <div style="color:var(--text-dim);font-size:13px;margin-bottom:10px">
+          A sprawling agricultural megacorp. Price is influenced by your crop sales and seasonal demand. The more you sell, the more they profit — and so do you.
+        </div>
+        <div style="color:var(--gold-dim);font-family:'Press Start 2P',monospace;font-size:6px;margin-bottom:6px">PERKS (CUMULATIVE)</div>
+        <div class="perk-list" id="bupop-perks">
+          <div class="perk-item" id="bupop-perk-0">
+            <span class="perk-badge locked" id="bupop-badge-0">LOCKED</span>
+            <span class="perk-name">Customer — sell prices +8%</span>
+            <span class="perk-req">3 shares</span>
+          </div>
+          <div class="perk-item" id="bupop-perk-1">
+            <span class="perk-badge locked" id="bupop-badge-1">LOCKED</span>
+            <span class="perk-name">Partner — bulk bonus threshold: 10→5 crops</span>
+            <span class="perk-req">8 shares</span>
+          </div>
+          <div class="perk-item" id="bupop-perk-2">
+            <span class="perk-badge locked" id="bupop-badge-2">LOCKED</span>
+            <span class="perk-name">Investor — price trend shown 2 days ahead</span>
+            <span class="perk-req">15 shares</span>
+          </div>
+          <div class="perk-item" id="bupop-perk-3">
+            <span class="perk-badge locked" id="bupop-badge-3">LOCKED</span>
+            <span class="perk-name">Major Shareholder — +15% all-time sell bonus</span>
+            <span class="perk-req">25 shares</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
 <script>
 /* ═══════════════════════════════════════════════════════════════════════════
  * ROBO FARM — MAIN GAME
@@ -859,6 +1122,33 @@ for (const [k, v] of Object.entries(S.player.startSeeds)) inventory.seeds[k] = v
 let currentTool = 'hand';
 let selectedRobotId = null;
 let assigningWorkArea = false;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * ECONOMY — COMPANIES & PRODUCTION STATS
+ * ═══════════════════════════════════════════════════════════════════════════ */
+const COMPANIES = {
+  rfs: {
+    id:'rfs', name:'Robot Farming Society', ticker:'RFS',
+    tagline:'By the land. For the land.', logo:'🤖🌾',
+    color:'#4a9c3f', accentColor:'#7fff7f', bgColor:'#060e04',
+    basePrice:48, price:48, volatility:0.065,
+    priceHistory:[], sharesOwned:0, dividend:0.8
+  },
+  bupop: {
+    id:'bupop', name:'BuPop Inc.', ticker:'BPOP',
+    tagline:'Your harvest. Our profit.', logo:'🏢',
+    color:'#3a7abb', accentColor:'#64b0ff', bgColor:'#04091a',
+    basePrice:128, price:128, volatility:0.04,
+    priceHistory:[], sharesOwned:0, dividend:1.5
+  }
+};
+
+let productionStats = {
+  history: [],   // last 30 days
+  today: { income:0, harvested:0, robotHarvests:0, cropBreakdown:{} }
+};
+
+let chartViewCompany = 'rfs';
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * PLAYER
@@ -1139,7 +1429,7 @@ function getAllBehaviors() {
 
 function runRobotBehavior(robot) {
   robot.workTimer++;
-  if (robot.workTimer < S.robots.workDelay) return;
+  if (robot.workTimer < Math.floor(S.robots.workDelay * getRFSWorkDelayBonus())) return;
   robot.workTimer = 0;
 
   if (robot.battery <= 0) {
@@ -1171,8 +1461,8 @@ function updateRobots() {
       continue;
     }
 
-    // Battery
-    if (robot.state === 'working') robot.battery = Math.max(0, robot.battery - S.robots.batteryDrain);
+    // Battery (RFS Member perk: -10% drain)
+    if (robot.state === 'working') robot.battery = Math.max(0, robot.battery - S.robots.batteryDrain * getRFSBatteryBonus());
     if (robot.tileX === robot.homeTileX && robot.tileY === robot.homeTileY && robot.battery < S.robots.batteryMax) {
       robot.battery = Math.min(S.robots.batteryMax, robot.battery + S.robots.chargeRate / 60);
     }
@@ -1192,14 +1482,14 @@ function updateRobots() {
     // Follow path
     if (robot.path && robot.path.length > 0) {
       const next = robot.path[0];
-      const speed = S.robots.speed * TILE / 60;
+      const speed = S.robots.speed * TILE / 60 * getRFSSpeedBonus();
       const dx = next.x * TILE - robot.px, dy = next.y * TILE - robot.py;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < speed + 1) {
         robot.px = next.x * TILE; robot.py = next.y * TILE;
         robot.tileX = next.x; robot.tileY = next.y;
         robot.path.shift();
-        robot.battery = Math.max(0, robot.battery - S.robots.batteryDrain * 0.3);
+        robot.battery = Math.max(0, robot.battery - S.robots.batteryDrain * 0.3 * getRFSBatteryBonus());
       } else {
         robot.px += (dx / dist) * speed;
         robot.py += (dy / dist) * speed;
@@ -1230,6 +1520,8 @@ function executeRobotAction(robot, action) {
     if (tile.crop.stage >= cfg.stages - 1) {
       const total = cfg.yield;
       robot.inventory.crops[tile.crop.type] = (robot.inventory.crops[tile.crop.type] || 0) + total;
+      productionStats.today.robotHarvests += total;
+      COMPANIES.rfs.price = Math.min(800, COMPANIES.rfs.price * (1 + total * 0.001));
       spawnParticles(action.x * TILE + TILE/2, action.y * TILE, 'harvest', 10);
       tile.crop = null;
     }
@@ -1339,6 +1631,7 @@ function handleTileClick(tx, ty, e) {
       if (tile.crop.stage >= cfg.stages - 1) {
         const got = cfg.yield;
         inventory.crops[tile.crop.type] = (inventory.crops[tile.crop.type] || 0) + got;
+        productionStats.today.harvested += got;
         spawnParticles(tx * TILE + TILE/2, ty * TILE, 'harvest', 12);
         notify(`${cfg.emoji} Harvested ${got}x ${tile.crop.type}!`);
         tile.crop = null; updateUI(); checkMilestones();
@@ -1362,7 +1655,8 @@ function handleTileClick(tx, ty, e) {
     } else notify(`💧 Nothing to water here!`);
   } else if (currentTool === 'robot_place') {
     if (isWalkable(tx, ty)) {
-      if (robots.length >= S.robots.maxRobots) { notify(`⚠️ Max robots reached (${S.robots.maxRobots})`); return; }
+      const maxBots = S.robots.maxRobots + getRFSMaxRobotBonus();
+      if (robots.length >= maxBots) { notify(`⚠️ Max robots reached (${maxBots})`); return; }
       // Use robot from player 'inventory'
       if (!playerHasRobot()) { notify(`🤖 Buy a robot at the Shop first!`); return; }
       usePlayerRobot();
@@ -1427,25 +1721,350 @@ function buyRobot() {
 function sellCrop(type) {
   const qty = inventory.crops[type] || 0;
   if (qty <= 0) { notify(`❌ No ${type} to sell!`); return; }
-  const bonus = qty >= 10 ? S.economy.bulkBonus : 1;
-  const earned = Math.round(getCropPrice(type) * qty * bonus);
-  coins += earned; delete inventory.crops[type];
+  const threshold = getBuPopBulkThreshold();
+  const bonus = qty >= threshold ? S.economy.bulkBonus : 1;
+  const sellBonus = getBuPopSellBonus();
+  const earned = Math.round(getCropPrice(type) * qty * bonus * sellBonus);
+  coins += earned;
+  productionStats.today.income += earned;
+  COMPANIES.bupop.price = Math.min(2000, COMPANIES.bupop.price * (1 + earned * 0.00002));
+  delete inventory.crops[type];
   notify(`💰 Sold ${qty}x ${type} for ${earned} coins${bonus > 1 ? ' (bulk bonus!)' : ''}!`);
   updateUI(); buildSellGrid();
 }
 
 function sellAll() {
   let total = 0;
+  const threshold = getBuPopBulkThreshold();
+  const sellBonus = getBuPopSellBonus();
   for (const [type, qty] of Object.entries(inventory.crops)) {
     if (qty > 0) {
-      const bonus = qty >= 10 ? S.economy.bulkBonus : 1;
-      total += Math.round(getCropPrice(type) * qty * bonus);
+      const bonus = qty >= threshold ? S.economy.bulkBonus : 1;
+      total += Math.round(getCropPrice(type) * qty * bonus * sellBonus);
     }
   }
   if (total === 0) { notify(`❌ Nothing to sell!`); return; }
-  coins += total; inventory.crops = {};
+  coins += total;
+  productionStats.today.income += total;
+  COMPANIES.bupop.price = Math.min(2000, COMPANIES.bupop.price * (1 + total * 0.00002));
+  inventory.crops = {};
   notify(`💰 Sold everything for ${total} coins!`);
   updateUI(); buildSellGrid();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * PERK GETTERS (RFS & BuPop)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+function getRFSBatteryBonus()  { return COMPANIES.rfs.sharesOwned >= 5  ? 0.9  : 1; }
+function getRFSSpeedBonus()    { return COMPANIES.rfs.sharesOwned >= 15 ? 1.15 : 1; }
+function getRFSMaxRobotBonus() { return COMPANIES.rfs.sharesOwned >= 30 ? 1    : 0; }
+function getRFSWorkDelayBonus(){ return COMPANIES.rfs.sharesOwned >= 50 ? 0.75 : 1; }
+function getBuPopSellBonus()   {
+  const n = COMPANIES.bupop.sharesOwned;
+  return n >= 25 ? 1.15 : n >= 3 ? 1.08 : 1;
+}
+function getBuPopBulkThreshold() { return COMPANIES.bupop.sharesOwned >= 8 ? 5 : 10; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * STOCK PRICE SIMULATION
+ * ═══════════════════════════════════════════════════════════════════════════ */
+function updateStockPrices() {
+  // RFS: biased by robot count and recent robot harvests
+  const rfsBias = 0.501 + Math.min(robots.length * 0.01, 0.1) + Math.min(productionStats.today.robotHarvests * 0.003, 0.1);
+  const rfsDir = Math.random() < rfsBias ? 1 : -1;
+  const rfsSwing = (0.01 + Math.random() * COMPANIES.rfs.volatility) * COMPANIES.rfs.price;
+  COMPANIES.rfs.price = Math.max(5, Math.min(800, COMPANIES.rfs.price + rfsDir * rfsSwing));
+  COMPANIES.rfs.priceHistory.push(Math.round(COMPANIES.rfs.price * 10) / 10);
+  if (COMPANIES.rfs.priceHistory.length > 30) COMPANIES.rfs.priceHistory.shift();
+
+  // BuPop: biased by sell income and seasonal demand
+  const seasonFactors = [1.08, 1.02, 1.12, 0.88];
+  const seasonMod = seasonFactors[season % 4] || 1;
+  const bpBias = 0.501 + Math.min(productionStats.today.income * 0.00004, 0.1) + (seasonMod - 1) * 0.3;
+  const bpDir = Math.random() < bpBias ? 1 : -1;
+  const bpSwing = (0.01 + Math.random() * COMPANIES.bupop.volatility) * COMPANIES.bupop.price;
+  COMPANIES.bupop.price = Math.max(5, Math.min(2000, COMPANIES.bupop.price + bpDir * bpSwing));
+  COMPANIES.bupop.priceHistory.push(Math.round(COMPANIES.bupop.price * 10) / 10);
+  if (COMPANIES.bupop.priceHistory.length > 30) COMPANIES.bupop.priceHistory.shift();
+}
+
+function onNewDay() {
+  updateStockPrices();
+
+  // Record production stats for the day that just ended
+  productionStats.history.push({ ...productionStats.today, day: day - 1 });
+  if (productionStats.history.length > 30) productionStats.history.shift();
+
+  // Pay dividends
+  const rfsDividend  = Math.floor(COMPANIES.rfs.sharesOwned  * COMPANIES.rfs.dividend);
+  const bpDividend   = Math.floor(COMPANIES.bupop.sharesOwned * COMPANIES.bupop.dividend);
+  const totalDiv = rfsDividend + bpDividend;
+  if (totalDiv > 0) {
+    coins += totalDiv;
+    notify(`💹 Dividends: +${totalDiv} coins (RFS: ${rfsDividend}, BPOP: ${bpDividend})`);
+  }
+
+  // Reset today's stats
+  productionStats.today = { income:0, harvested:0, robotHarvests:0, cropBreakdown:{} };
+
+  // Refresh UI if economy modal is open
+  const econModal = document.getElementById('modal-economy');
+  if (econModal && !econModal.classList.contains('hidden')) refreshEconomyUI();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * STOCK / PRODUCTION CHART DRAWING
+ * ═══════════════════════════════════════════════════════════════════════════ */
+function drawStockChart(canvas, company, mini) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const pw = rect.width || canvas.offsetWidth || 300;
+  const ph = rect.height || canvas.offsetHeight || (mini ? 50 : 200);
+  canvas.width  = pw * dpr;
+  canvas.height = ph * dpr;
+  const c = canvas.getContext('2d');
+  c.scale(dpr, dpr);
+  const w = pw, h = ph;
+  c.clearRect(0, 0, w, h);
+
+  const hist = company.priceHistory;
+  if (hist.length < 2) {
+    c.fillStyle = company.color + '30';
+    c.fillRect(0, 0, w, h);
+    c.fillStyle = company.color;
+    c.font = `${mini ? 10 : 13}px VT323, monospace`;
+    c.fillText('No data yet', 6, h / 2 + 4);
+    return;
+  }
+
+  const mn = Math.min(...hist) * 0.95;
+  const mx = Math.max(...hist) * 1.05;
+  const rng = mx - mn || 1;
+  const toY = v => h - 4 - ((v - mn) / rng) * (h - 8);
+  const toX = i => (i / (hist.length - 1)) * w;
+  const isUp = hist[hist.length - 1] >= hist[0];
+  const lineCol = isUp ? '#4a9c3f' : '#c44040';
+
+  // Gradient fill
+  const grad = c.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, company.color + '55');
+  grad.addColorStop(1, company.color + '08');
+  c.beginPath();
+  c.moveTo(toX(0), h);
+  for (let i = 0; i < hist.length; i++) c.lineTo(toX(i), toY(hist[i]));
+  c.lineTo(toX(hist.length - 1), h);
+  c.closePath();
+  c.fillStyle = grad;
+  c.fill();
+
+  // Line
+  c.beginPath();
+  c.moveTo(toX(0), toY(hist[0]));
+  for (let i = 1; i < hist.length; i++) c.lineTo(toX(i), toY(hist[i]));
+  c.strokeStyle = lineCol;
+  c.lineWidth = mini ? 1.5 : 2;
+  c.stroke();
+
+  // Last-point dot
+  const lx = toX(hist.length - 1), ly = toY(hist[hist.length - 1]);
+  c.beginPath();
+  c.arc(lx, ly, mini ? 2.5 : 4, 0, Math.PI * 2);
+  c.fillStyle = lineCol;
+  c.fill();
+
+  if (!mini) {
+    // Grid lines
+    c.strokeStyle = 'rgba(255,255,255,0.08)';
+    c.lineWidth = 1;
+    for (let i = 1; i < 4; i++) {
+      const gy = h * i / 4;
+      c.beginPath(); c.moveTo(0, gy); c.lineTo(w, gy); c.stroke();
+      const pv = mx - rng * i / 4;
+      c.fillStyle = 'rgba(255,255,255,0.35)';
+      c.font = '11px VT323, monospace';
+      c.fillText(Math.round(pv), 3, gy - 2);
+    }
+    // Day labels
+    const step = Math.max(1, Math.ceil(hist.length / 8));
+    c.fillStyle = 'rgba(255,255,255,0.3)';
+    c.font = '10px VT323, monospace';
+    for (let i = 0; i < hist.length; i += step) {
+      c.fillText(`D${i+1}`, toX(i) - 6, h - 1);
+    }
+  }
+}
+
+function drawIncomeChart(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const pw = rect.width || canvas.offsetWidth || 400;
+  const ph = rect.height || canvas.offsetHeight || 140;
+  canvas.width  = pw * dpr;
+  canvas.height = ph * dpr;
+  const c = canvas.getContext('2d');
+  c.scale(dpr, dpr);
+  const w = pw, h = ph;
+  c.clearRect(0, 0, w, h);
+
+  const bars = [...productionStats.history.slice(-13), { ...productionStats.today, day }];
+  if (!bars.length) return;
+
+  const maxVal = Math.max(...bars.map(d => d.income), 1);
+  const barW = w / bars.length;
+  const pad = 2;
+  const labelH = 18;
+
+  bars.forEach((d, i) => {
+    const isToday = i === bars.length - 1;
+    const barH = Math.max(1, (d.income / maxVal) * (h - labelH - 4));
+    const x = i * barW + pad;
+    const y = h - labelH - barH;
+    c.fillStyle = isToday ? '#f5c842' : '#c9973a66';
+    c.fillRect(x, y, barW - pad * 2, barH);
+    c.fillStyle = isToday ? 'rgba(245,200,66,0.2)' : 'transparent';
+    if (isToday) c.fillRect(x, 0, barW - pad * 2, h - labelH);
+    c.fillStyle = 'rgba(255,255,255,0.35)';
+    c.font = '10px VT323, monospace';
+    const label = d.day !== undefined ? String(d.day) : '?';
+    c.fillText(label, x + (barW - pad * 2) / 2 - 3, h - 4);
+  });
+
+  // Y label
+  c.fillStyle = 'rgba(255,255,255,0.5)';
+  c.font = '11px VT323, monospace';
+  c.fillText(maxVal, 2, 12);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * ECONOMY UI
+ * ═══════════════════════════════════════════════════════════════════════════ */
+function refreshEconomyUI() {
+  const rfs   = COMPANIES.rfs;
+  const bupop = COMPANIES.bupop;
+
+  // --- Market tab ---
+  const fmt = v => Math.round(v * 10) / 10;
+
+  // RFS price + change
+  const rfsPrev = rfs.priceHistory.length >= 2 ? rfs.priceHistory[rfs.priceHistory.length - 2] : rfs.price;
+  const rfsChg  = rfs.price - rfsPrev;
+  const rfsChgPct = rfsPrev ? ((rfsChg / rfsPrev) * 100).toFixed(1) : '0.0';
+  const rfsPriceEl  = document.getElementById('econ-rfs-price');
+  const rfsChangeEl = document.getElementById('econ-rfs-change');
+  if (rfsPriceEl)  rfsPriceEl.textContent  = fmt(rfs.price) + ' ¢';
+  if (rfsChangeEl) {
+    rfsChangeEl.textContent = (rfsChg >= 0 ? '▲' : '▼') + Math.abs(rfsChgPct) + '%';
+    rfsChangeEl.className   = 'stock-change ' + (rfsChg >= 0 ? 'up' : 'down');
+  }
+  const rfsSharesEl = document.getElementById('econ-rfs-shares');
+  const rfsValueEl  = document.getElementById('econ-rfs-value');
+  if (rfsSharesEl) rfsSharesEl.textContent = rfs.sharesOwned;
+  if (rfsValueEl)  rfsValueEl.textContent  = Math.round(rfs.sharesOwned * rfs.price) + ' ¢';
+  const rfsCostEl = document.getElementById('econ-rfs-cost');
+  const rfsQtyEl  = document.getElementById('rfs-qty');
+  if (rfsCostEl && rfsQtyEl) {
+    const q = parseInt(rfsQtyEl.value) || 1;
+    rfsCostEl.textContent = `Buy ${q}: ${Math.round(rfs.price * q)} ¢  |  Sell ${q}: ${Math.round(rfs.price * q)} ¢`;
+  }
+
+  // BuPop price + change
+  const bpPrev = bupop.priceHistory.length >= 2 ? bupop.priceHistory[bupop.priceHistory.length - 2] : bupop.price;
+  const bpChg  = bupop.price - bpPrev;
+  const bpChgPct = bpPrev ? ((bpChg / bpPrev) * 100).toFixed(1) : '0.0';
+  const bpPriceEl  = document.getElementById('econ-bupop-price');
+  const bpChangeEl = document.getElementById('econ-bupop-change');
+  if (bpPriceEl)  bpPriceEl.textContent  = fmt(bupop.price) + ' ¢';
+  if (bpChangeEl) {
+    bpChangeEl.textContent = (bpChg >= 0 ? '▲' : '▼') + Math.abs(bpChgPct) + '%';
+    bpChangeEl.className   = 'stock-change ' + (bpChg >= 0 ? 'up' : 'down');
+  }
+  const bpSharesEl = document.getElementById('econ-bupop-shares');
+  const bpValueEl  = document.getElementById('econ-bupop-value');
+  if (bpSharesEl) bpSharesEl.textContent = bupop.sharesOwned;
+  if (bpValueEl)  bpValueEl.textContent  = Math.round(bupop.sharesOwned * bupop.price) + ' ¢';
+  const bpCostEl = document.getElementById('econ-bupop-cost');
+  const bpQtyEl  = document.getElementById('bupop-qty');
+  if (bpCostEl && bpQtyEl) {
+    const q = parseInt(bpQtyEl.value) || 1;
+    bpCostEl.textContent = `Buy ${q}: ${Math.round(bupop.price * q)} ¢  |  Sell ${q}: ${Math.round(bupop.price * q)} ¢`;
+  }
+
+  // Sparklines
+  const slRFS = document.getElementById('sparkline-rfs');
+  if (slRFS) drawStockChart(slRFS, rfs, true);
+  const slBP = document.getElementById('sparkline-bupop');
+  if (slBP) drawStockChart(slBP, bupop, true);
+
+  // --- Charts tab ---
+  const priceCanvas = document.getElementById('price-chart-canvas');
+  if (priceCanvas && priceCanvas.getBoundingClientRect().width > 0) {
+    drawStockChart(priceCanvas, chartViewCompany === 'rfs' ? rfs : bupop, false);
+  }
+  const chartLabel = document.getElementById('chart-label');
+  const co = chartViewCompany === 'rfs' ? rfs : bupop;
+  if (chartLabel) chartLabel.textContent = `${co.ticker} — ${co.priceHistory.length}-day price history`;
+
+  // --- Production tab ---
+  const prodIncome = document.getElementById('prod-income');
+  const prodHarv   = document.getElementById('prod-harvested');
+  const prodRobot  = document.getElementById('prod-robot-harvests');
+  if (prodIncome)  prodIncome.textContent  = productionStats.today.income;
+  if (prodHarv)    prodHarv.textContent    = productionStats.today.harvested;
+  if (prodRobot)   prodRobot.textContent   = productionStats.today.robotHarvests;
+  const incomeCanvas = document.getElementById('income-chart-canvas');
+  if (incomeCanvas && incomeCanvas.getBoundingClientRect().width > 0) drawIncomeChart(incomeCanvas);
+
+  // --- Companies tab: perk unlock state ---
+  const rfsPerks  = [[5,'rfs-perk-0','rfs-badge-0'],[15,'rfs-perk-1','rfs-badge-1'],[30,'rfs-perk-2','rfs-badge-2'],[50,'rfs-perk-3','rfs-badge-3']];
+  const bpPerks   = [[3,'bupop-perk-0','bupop-badge-0'],[8,'bupop-perk-1','bupop-badge-1'],[15,'bupop-perk-2','bupop-badge-2'],[25,'bupop-perk-3','bupop-badge-3']];
+  rfsPerks.forEach(([req, perkId, badgeId]) => {
+    const unlocked = rfs.sharesOwned >= req;
+    const perkEl  = document.getElementById(perkId);
+    const badgeEl = document.getElementById(badgeId);
+    if (perkEl)  { perkEl.classList.toggle('unlocked', unlocked); }
+    if (badgeEl) { badgeEl.textContent = unlocked ? '✓ ACTIVE' : 'LOCKED'; badgeEl.className = 'perk-badge ' + (unlocked ? 'unlocked' : 'locked'); }
+  });
+  bpPerks.forEach(([req, perkId, badgeId]) => {
+    const unlocked = bupop.sharesOwned >= req;
+    const perkEl  = document.getElementById(perkId);
+    const badgeEl = document.getElementById(badgeId);
+    if (perkEl)  { perkEl.classList.toggle('unlocked', unlocked); perkEl.classList.toggle('bp', unlocked); }
+    if (badgeEl) { badgeEl.textContent = unlocked ? '✓ ACTIVE' : 'LOCKED'; badgeEl.className = 'perk-badge ' + (unlocked ? 'unlocked bp' : 'locked'); }
+  });
+}
+
+function setChartView(id) {
+  chartViewCompany = id;
+  document.getElementById('chart-btn-rfs').className   = 'chart-toggle-btn' + (id === 'rfs'   ? ' active-rfs'   : '');
+  document.getElementById('chart-btn-bupop').className = 'chart-toggle-btn' + (id === 'bupop' ? ' active-bupop' : '');
+  refreshEconomyUI();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * BUY / SELL SHARES
+ * ═══════════════════════════════════════════════════════════════════════════ */
+function buyShares(companyId, rawQty) {
+  const co = COMPANIES[companyId];
+  if (!co) return;
+  const qty = Math.max(1, parseInt(rawQty) || 1);
+  const cost = Math.round(co.price * qty);
+  if (coins < cost) { notify(`❌ Need ${cost} coins to buy ${qty}x ${co.ticker}!`); return; }
+  coins -= cost;
+  co.sharesOwned += qty;
+  notify(`📈 Bought ${qty}x ${co.ticker} for ${cost} coins!`);
+  updateUI(); refreshEconomyUI();
+}
+
+function sellShares(companyId, rawQty) {
+  const co = COMPANIES[companyId];
+  if (!co) return;
+  const qty = Math.max(1, parseInt(rawQty) || 1);
+  if (co.sharesOwned < qty) { notify(`❌ You only own ${co.sharesOwned}x ${co.ticker}!`); return; }
+  const earned = Math.round(co.price * qty);
+  coins += earned;
+  co.sharesOwned -= qty;
+  notify(`📉 Sold ${qty}x ${co.ticker} for ${earned} coins!`);
+  updateUI(); refreshEconomyUI();
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1900,6 +2519,7 @@ function update() {
     season = Math.floor((day - 1) / S.time.seasonLength) % SEASONS.length;
     rainDay = Math.random() < (S.time.rainChance[SEASONS[season]] || 0.2);
     refreshPrices();
+    onNewDay();
     saveGame();
 
     const bannerEl = document.getElementById('day-banner');
@@ -1964,6 +2584,7 @@ function openModal(id) {
   if (id === 'shop') { buildShop(); buildSellGrid(); }
   if (id === 'robots') buildRobotList();
   if (id === 'files') openFilesModal();
+  if (id === 'economy') setTimeout(refreshEconomyUI, 0);
 }
 function closeModal(id) { document.getElementById(`modal-${id}`).classList.add('hidden'); syncCursorMode(); }
 function closeAllModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden')); syncCursorMode(); }
@@ -2166,6 +2787,11 @@ function buildSaveObject() {
   return {
     v: 2, coins, day, tick, season, isRaining, rainDay, inventory, robotsOwned,
     nextRobotId, priceMultipliers,
+    economy: {
+      rfs:   { price: COMPANIES.rfs.price,   priceHistory: COMPANIES.rfs.priceHistory,   sharesOwned: COMPANIES.rfs.sharesOwned   },
+      bupop: { price: COMPANIES.bupop.price, priceHistory: COMPANIES.bupop.priceHistory, sharesOwned: COMPANIES.bupop.sharesOwned },
+      productionHistory: productionStats.history,
+    },
     robots: robots.map(r => ({
       id: r.id, name: r.name, tileX: r.tileX, tileY: r.tileY,
       homeTileX: r.homeTileX, homeTileY: r.homeTileY,
@@ -2237,6 +2863,15 @@ function applyGameSave(save) {
   coins = save.coins; day = save.day; tick = save.tick; season = save.season;
   isRaining = save.isRaining; rainDay = save.rainDay; inventory = save.inventory;
   robotsOwned = save.robotsOwned; nextRobotId = save.nextRobotId; priceMultipliers = save.priceMultipliers;
+  if (save.economy) {
+    COMPANIES.rfs.price        = save.economy.rfs?.price        ?? COMPANIES.rfs.basePrice;
+    COMPANIES.rfs.priceHistory = save.economy.rfs?.priceHistory ?? [];
+    COMPANIES.rfs.sharesOwned  = save.economy.rfs?.sharesOwned  ?? 0;
+    COMPANIES.bupop.price        = save.economy.bupop?.price        ?? COMPANIES.bupop.basePrice;
+    COMPANIES.bupop.priceHistory = save.economy.bupop?.priceHistory ?? [];
+    COMPANIES.bupop.sharesOwned  = save.economy.bupop?.sharesOwned  ?? 0;
+    productionStats.history = save.economy.productionHistory ?? [];
+  }
   for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) {
     if (save.world[y] && save.world[y][x]) {
       world[y][x].type = save.world[y][x].type;
