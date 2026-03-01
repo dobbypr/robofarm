@@ -2,56 +2,170 @@
  * MENU SCREEN
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ─── View switching ─── */
-function menuShowView(name) {
+/* ─── Menu state ─── */
+const MENU_FLOW = {
+  view: 'main',
+  slotMode: 'new',
+  settingsDirty: false,
+  pendingViewAfterSettings: null,
+  pendingOverwriteSlot: null,
+  transitionLock: false,
+};
+
+let menuPauseMode = false;
+let ambientActive = false;
+let MENU_SETTINGS_DRAFT = null;
+let MENU_SETTINGS_SNAPSHOT = null;
+
+function isMenuVisible() {
+  const screen = document.getElementById('menu-screen');
+  return !!screen && !screen.classList.contains('hidden');
+}
+
+function _menuBeginTransition() {
+  if (MENU_FLOW.transitionLock) return false;
+  MENU_FLOW.transitionLock = true;
+  return true;
+}
+
+function _menuEndTransition() {
+  MENU_FLOW.transitionLock = false;
+}
+
+function _menuActivateView(name) {
   document.querySelectorAll('.menu-view').forEach(v => v.classList.remove('active'));
   const el = document.getElementById(`menu-${name}`);
   if (el) el.classList.add('active');
+}
 
-  if (name === 'new-game')  menuBuildSlots('new');
+function menuShowView(name) {
+  menuSetView(name);
+}
+
+function menuSetView(name, opts = {}) {
+  const force = !!opts.force;
+  const fromView = MENU_FLOW.view;
+
+  if (!force && fromView === 'settings' && name !== 'settings' && MENU_FLOW.settingsDirty) {
+    MENU_FLOW.pendingViewAfterSettings = name;
+    MENU_FLOW.view = 'settings-confirm';
+    _menuActivateView('settings-confirm');
+    menuBuildSettingsConfirm();
+    _menuUpdateSettingsHint();
+    return;
+  }
+
+  MENU_FLOW.view = name;
+  if (name === 'new-game') MENU_FLOW.slotMode = 'new';
+  if (name === 'load-game') MENU_FLOW.slotMode = 'load';
+  _menuActivateView(name);
+
+  if (name === 'new-game') menuBuildSlots('new');
   if (name === 'load-game') menuBuildSlots('load');
-  if (name === 'settings')  menuBuildSettings();
+  if (name === 'settings') {
+    if (fromView !== 'settings' && fromView !== 'settings-confirm') _menuStartSettingsDraft();
+    menuBuildSettings();
+    _menuUpdateSettingsHint();
+  }
+  if (name === 'settings-confirm') menuBuildSettingsConfirm();
 }
 
 /* ─── Open / close menu overlay ─── */
+
 function openMenu() {
+  if (MENU_FLOW.transitionLock) return;
   const screen = document.getElementById('menu-screen');
   screen.classList.remove('hidden', 'fade-out');
   document.body.classList.add('show-system-cursor');
   if (S.display.menuColorThemes !== false) {
-    document.getElementById('menu-tint')?.classList.add('active');
+    const tintEl = document.getElementById('menu-tint');
+    if (tintEl) {
+      tintEl.classList.add('active');
+      tintEl.style.backgroundColor = getMenuTint();
+    }
   }
-  menuShowView('main');
-  menuRefreshContinueBtn();
-  if (gameState === 'playing') {
+  MENU_FLOW.pendingViewAfterSettings = null;
+  menuSetView('main', { force: true });
+  const wasPlaying = gameState === 'playing';
+  if (wasPlaying) {
+    menuPauseMode = true;
     gameState = 'menu';
-    document.getElementById('menu-version-label').style.display = 'block';
-    // show "Back to Game" instead of Quit when pausing mid-game
-    const quitBtn = document.querySelector('#menu-main .menu-btn.danger');
-    if (quitBtn) { quitBtn.textContent = 'BACK TO GAME'; quitBtn.onclick = resumeGame; }
-    // hide New Game to prevent accidental world reset while playing
-    const newGameBtn = document.querySelector('#menu-main .menu-buttons .menu-btn:nth-child(2)');
-    if (newGameBtn && currentSlot > 0) newGameBtn.style.display = 'none';
+    const continueBtn = document.getElementById('menu-btn-continue');
+    if (continueBtn) {
+      continueBtn.style.display = 'block';
+      continueBtn.innerHTML = '▶&nbsp; BACK TO GAME';
+      continueBtn.onclick = resumeGame;
+    }
+    const newGameBtn = document.getElementById('menu-btn-new-game');
+    if (newGameBtn) newGameBtn.style.display = 'none';
+    const settingsBtn = document.getElementById('menu-btn-settings');
+    if (settingsBtn) settingsBtn.style.display = '';
+    const quitBtn = document.getElementById('menu-btn-quit');
+    if (quitBtn) { quitBtn.textContent = 'QUIT TO TITLE'; quitBtn.onclick = menuQuitToTitle; }
   } else {
-    const quitBtn = document.querySelector('#menu-main .menu-btn.danger');
+    menuPauseMode = false;
+    _menuStartSettingsDraft();
+    const continueBtn = document.getElementById('menu-btn-continue');
+    if (continueBtn) {
+      continueBtn.innerHTML = '▶&nbsp; CONTINUE';
+      continueBtn.onclick = menuContinue;
+    }
+    const quitBtn = document.getElementById('menu-btn-quit');
     if (quitBtn) { quitBtn.textContent = 'QUIT'; quitBtn.onclick = menuQuit; }
-    const newGameBtn = document.querySelector('#menu-main .menu-buttons .menu-btn:nth-child(2)');
+    const newGameBtn = document.getElementById('menu-btn-new-game');
     if (newGameBtn) newGameBtn.style.display = '';
+    const settingsBtn = document.getElementById('menu-btn-settings');
+    if (settingsBtn) settingsBtn.style.display = '';
+    menuRefreshContinueBtn();
   }
 }
 
-function closeMenu() {
+function closeMenu(onClosed) {
   const screen = document.getElementById('menu-screen');
   screen.classList.add('fade-out');
   document.getElementById('menu-tint')?.classList.remove('active');
-  const newGameBtn = document.querySelector('#menu-main .menu-buttons .menu-btn:nth-child(2)');
+  const newGameBtn = document.getElementById('menu-btn-new-game');
   if (newGameBtn) newGameBtn.style.display = '';
-  setTimeout(() => { screen.classList.add('hidden'); syncCursorMode(); }, 120);
+  setTimeout(() => {
+    screen.classList.add('hidden');
+    syncCursorMode();
+    if (typeof onClosed === 'function') onClosed();
+  }, 120);
 }
 
 function resumeGame() {
+  if (!menuPauseMode) return;
+  if (!_menuBeginTransition()) return;
+  menuPauseMode = false;
+  ambientActive = false;
   gameState = 'playing';
-  closeMenu();
+  closeMenu(() => _menuEndTransition());
+}
+
+function menuQuitToTitle() {
+  if (!_menuBeginTransition()) return;
+  if (!confirm('Quit to title screen? Current game will be saved.')) { _menuEndTransition(); return; }
+  if (currentSlot > 0) saveGame(currentSlot);
+  if (typeof closeAllModals === 'function') closeAllModals();
+  if (typeof cancelAssign === 'function') cancelAssign();
+  _clearInputLatchState();
+  menuPauseMode = false;
+  gameState = 'menu';
+  initAmbient();
+  const continueBtn = document.getElementById('menu-btn-continue');
+  if (continueBtn) {
+    continueBtn.innerHTML = '▶&nbsp; CONTINUE';
+    continueBtn.onclick = menuContinue;
+  }
+  const quitBtn = document.getElementById('menu-btn-quit');
+  if (quitBtn) { quitBtn.textContent = 'QUIT'; quitBtn.onclick = menuQuit; }
+  const newGameBtn = document.getElementById('menu-btn-new-game');
+  if (newGameBtn) newGameBtn.style.display = '';
+  const settingsBtn = document.getElementById('menu-btn-settings');
+  if (settingsBtn) settingsBtn.style.display = '';
+  menuSetView('main', { force: true });
+  menuRefreshContinueBtn();
+  _menuEndTransition();
 }
 
 function menuQuit() {
@@ -61,13 +175,18 @@ function menuQuit() {
 /* ─── Continue button visibility ─── */
 function menuRefreshContinueBtn() {
   const btn = document.getElementById('menu-btn-continue');
+  if (!btn) return;
+  if (menuPauseMode) { btn.style.display = 'block'; return; }
   const hasSave = [1,2,3].some(s => getSlotMeta(s) !== null);
   btn.style.display = hasSave ? 'block' : 'none';
 }
 
 function menuContinue() {
+  if (menuPauseMode) { resumeGame(); return; }
   const saves = [1,2,3].filter(s => getSlotMeta(s) !== null);
-  if (saves.length === 1) {
+  if (saves.length === 0) {
+    menuShowView('new-game');
+  } else if (saves.length === 1) {
     launchGame(saves[0], false);
   } else {
     menuShowView('load-game');
@@ -93,6 +212,7 @@ function _fmtSavedAt(iso) {
 }
 
 function menuBuildSlots(mode) {
+  MENU_FLOW.slotMode = mode;
   const containerId = mode === 'new' ? 'menu-new-slots' : 'menu-load-slots';
   const container = document.getElementById(containerId);
   container.innerHTML = '';
@@ -132,73 +252,167 @@ function menuDeleteSlot(e, slot) {
   if (!confirm(`Delete Slot ${slot}? This cannot be undone.`)) return;
   deleteSlot(slot);
   if (currentSlot === slot) { currentSlot = 0; }
-  menuBuildSlots(document.getElementById('menu-new-slots').children.length ? 'new' : 'load');
+  menuBuildSlots(MENU_FLOW.slotMode === 'load' ? 'load' : 'new');
   menuRefreshContinueBtn();
 }
 
 function menuConfirmOverwrite(slot, meta) {
+  MENU_FLOW.pendingOverwriteSlot = slot;
   const seasonName = (S.time.seasons || SEASONS)[meta.season % (S.time.seasons || SEASONS).length];
   document.getElementById('menu-confirm-msg').textContent =
     `Slot ${slot}: Day ${meta.day}, ${seasonName}, ${meta.coins} coins`;
   const okBtn = document.getElementById('menu-confirm-ok');
   okBtn.onclick = () => launchGame(slot, true);
-  menuShowView('confirm');
+  menuSetView('confirm');
+}
+
+function menuCancelOverwrite() {
+  const nextView = MENU_FLOW.slotMode === 'load' ? 'load-game' : 'new-game';
+  menuSetView(nextView, { force: true });
 }
 
 /* ─── Launch game ─── */
+let menuLaunchInFlight = false;
+
+function _clearInputLatchState() {
+  if (typeof keys === 'object' && keys) {
+    for (const k of Object.keys(keys)) keys[k] = false;
+  }
+  if (typeof mouseIsDown !== 'undefined') mouseIsDown = false;
+  if (typeof _listeningForKey !== 'undefined' && _listeningForKey) {
+    _listeningForKey.classList.remove('listening');
+    _listeningForKey = null;
+  }
+  assigningWorkArea = false;
+  selectedRobotId = null;
+  if (typeof configRobotId !== 'undefined') configRobotId = null;
+  if (typeof invSelectedCrop !== 'undefined') invSelectedCrop = null;
+}
+
+function _resetPlayerToSpawn() {
+  player.tileX = S.player.startX;
+  player.tileY = S.player.startY;
+  player.px = S.player.startX * TILE;
+  player.py = S.player.startY * TILE;
+  player.facingX = 0;
+  player.facingY = 1;
+  player.moving = false;
+  player.frame = 0;
+  player.frameTimer = 0;
+}
+
+function _emptyOwnedRobots() {
+  const owned = {};
+  for (const key of Object.keys(ROBOT_TYPES)) owned[key] = 0;
+  if (!('basic' in owned)) owned.basic = 0;
+  return owned;
+}
+
+function _buildFreshGameState() {
+  coins = S.player.startCoins;
+  day = 1;
+  tick = 0;
+  season = 0;
+  isRaining = false;
+  rainDay = Math.random() < (S.time.rainChance?.Spring ?? 0.2);
+
+  inventory = { seeds: {}, crops: {} };
+  for (const [k, v] of Object.entries(S.player.startSeeds || {})) inventory.seeds[k] = v;
+
+  robotsOwned = _emptyOwnedRobots();
+  pendingRobotType = ROBOT_TYPES.basic ? 'basic' : (Object.keys(ROBOT_TYPES)[0] || 'basic');
+  currentTool = 'hand';
+
+  robots = [];
+  nextRobotId = 1;
+  playtime = 0;
+  productionStats = { history: [], today: { income:0, harvested:0, robotHarvests:0, cropBreakdown:{} } };
+  COMPANIES.rfs.price = COMPANIES.rfs.basePrice;
+  COMPANIES.rfs.priceHistory = [];
+  COMPANIES.rfs.sharesOwned = 0;
+  COMPANIES.bupop.price = COMPANIES.bupop.basePrice;
+  COMPANIES.bupop.priceHistory = [];
+  COMPANIES.bupop.sharesOwned = 0;
+
+  generateWorld();
+  _resetPlayerToSpawn();
+
+  // Starter robots
+  for (let i = 0; i < S.player.startRobots; i++) {
+    robots.push(new Robot(S.player.startX + 2 + i, S.player.startY + 2));
+  }
+
+  if (typeof particles !== 'undefined') particles = [];
+  if (typeof cropTick !== 'undefined') cropTick = 0;
+  if (typeof selectTool === 'function') selectTool('hand');
+}
+
 function launchGame(slot, isNew) {
+  if (menuLaunchInFlight) return;
+  if (!_menuBeginTransition()) return;
+  menuLaunchInFlight = true;
+
   const screen = document.getElementById('menu-screen');
   screen.classList.add('fade-out');
 
   setTimeout(() => {
-    screen.classList.add('hidden');
-    document.getElementById('menu-tint')?.classList.remove('active');
+    try {
+      screen.classList.add('hidden');
+      document.getElementById('menu-tint')?.classList.remove('active');
+      document.body.classList.remove('show-system-cursor');
+      if (typeof closeAllModals === 'function') closeAllModals();
+      if (typeof cancelAssign === 'function') cancelAssign();
+      _clearInputLatchState();
+      if (typeof syncCursorMode === 'function') syncCursorMode();
+      ambientActive = false;
 
-    // Reset state for new or loaded game
-    if (isNew) {
-      // Fresh game state
-      coins = S.player.startCoins;
-      day = 1; tick = 0; season = 0;
-      isRaining = false; rainDay = Math.random() < (S.time.rainChance?.Spring ?? 0.2);
-      inventory = { seeds: {}, crops: {} };
-      for (const [k,v] of Object.entries(S.player.startSeeds)) inventory.seeds[k] = v;
-      robotsOwned = { rust: 0, basic: 0, pro: 0 };
-      robots = [];
-      playtime = 0;
-      productionStats = { history: [], today: { income:0, harvested:0, robotHarvests:0, cropBreakdown:{} } };
-      COMPANIES.rfs.price = COMPANIES.rfs.basePrice; COMPANIES.rfs.priceHistory = []; COMPANIES.rfs.sharesOwned = 0;
-      COMPANIES.bupop.price = COMPANIES.bupop.basePrice; COMPANIES.bupop.priceHistory = []; COMPANIES.bupop.sharesOwned = 0;
-
-      generateWorld();
-
-      // Starter robots
-      for (let i = 0; i < S.player.startRobots; i++) {
-        robots.push(new Robot(S.player.startX + 2 + i, S.player.startY + 2));
+      let launchedAsNew = isNew;
+      if (isNew) {
+        _buildFreshGameState();
+        notify('🌾 Welcome to Robo Farm! Press F for the guide.');
+        notify('🌱 Start by tilling soil (key 2) and planting seeds!');
+      } else {
+        generateWorld();
+        const loaded = loadGameSlot(slot);
+        if (!loaded) {
+          launchedAsNew = true;
+          _buildFreshGameState();
+          notify(`⚠️ Slot ${slot} could not be loaded. Started a fresh world instead.`);
+        }
       }
 
-      notify('🌾 Welcome to Robo Farm! Press F for the guide.');
-      notify('🌱 Start by tilling soil (key 2) and planting seeds!');
-    } else {
-      generateWorld();
-      loadGameSlot(slot);
-    }
+      currentSlot = slot;
+      menuPauseMode = false;
+      gameState = 'playing';
 
-    currentSlot = slot;
-    gameState = 'playing';
+      // Camera
+      camera.x = window.innerWidth/2 - (player.px + TILE/2) * camera.zoom;
+      camera.y = window.innerHeight/2 - (player.py + TILE/2) * camera.zoom;
 
-    // Camera
-    camera.x = window.innerWidth/2 - (player.px + TILE/2) * camera.zoom;
-    camera.y = window.innerHeight/2 - (player.py + TILE/2) * camera.zoom;
+      updateUI();
+      saveGame(slot);
 
-    updateUI();
-    saveGame(slot);
-
-    // Show changelog once per version for returning players
-    if (!isNew) {
-      const lastSeen = localStorage.getItem('roboFarm_changelogSeen');
-      if (lastSeen !== 'v0.2.2') {
-        setTimeout(() => { openModal('changelog'); localStorage.setItem('roboFarm_changelogSeen', 'v0.2.2'); }, 400);
+      // Show welcome gazette on day 1 for fresh games
+      if (launchedAsNew && day === 1) {
+        setTimeout(() => { if (typeof showGazette === 'function') showGazette(); }, 500);
       }
+
+      // Show changelog once per version for returning players
+      if (!launchedAsNew) {
+        const lastSeen = localStorage.getItem('roboFarm_changelogSeen');
+        if (lastSeen !== 'v0.2.2') {
+          setTimeout(() => { openModal('changelog'); localStorage.setItem('roboFarm_changelogSeen', 'v0.2.2'); }, 400);
+        }
+      }
+    } catch (err) {
+      console.error('Launch failed:', err);
+      menuPauseMode = false;
+      gameState = 'menu';
+      screen.classList.remove('hidden', 'fade-out');
+      notify('❌ Launch failed. Returned to menu.');
+    } finally {
+      menuLaunchInFlight = false;
+      _menuEndTransition();
     }
   }, 120);
 }
@@ -213,7 +427,115 @@ function _saveSettingsOverrides(obj) {
   localStorage.setItem(MENU_SETTINGS_STORE, JSON.stringify(obj));
 }
 
+function _menuReadRuntimeSettings() {
+  return {
+    showNotifications: !!S.display.showNotifications,
+    showDayBanner: S.display.showDayBanner !== false,
+    menuColorThemes: S.display.menuColorThemes !== false,
+    notificationDuration: S.display.notificationDuration ?? 3500,
+    keybindings: { ...(S.keybindings || {}) },
+  };
+}
+
+function _menuCloneSettingsData(src) {
+  return {
+    showNotifications: !!src.showNotifications,
+    showDayBanner: !!src.showDayBanner,
+    menuColorThemes: !!src.menuColorThemes,
+    notificationDuration: src.notificationDuration ?? 3500,
+    keybindings: { ...(src.keybindings || {}) },
+  };
+}
+
+function _menuApplySettingsRuntime(data) {
+  S.display.showNotifications = !!data.showNotifications;
+  S.display.showDayBanner = !!data.showDayBanner;
+  S.display.menuColorThemes = !!data.menuColorThemes;
+  S.display.notificationDuration = data.notificationDuration ?? 3500;
+  S.keybindings = S.keybindings || {};
+  Object.assign(S.keybindings, data.keybindings || {});
+  const tintEl = document.getElementById('menu-tint');
+  if (tintEl) tintEl.classList.toggle('active', S.display.menuColorThemes !== false);
+}
+
+function _menuStartSettingsDraft() {
+  if (_listeningForKey) {
+    _listeningForKey.classList.remove('listening');
+    _listeningForKey = null;
+  }
+  MENU_SETTINGS_SNAPSHOT = _menuReadRuntimeSettings();
+  MENU_SETTINGS_DRAFT = _menuCloneSettingsData(MENU_SETTINGS_SNAPSHOT);
+  MENU_FLOW.settingsDirty = false;
+  MENU_FLOW.pendingViewAfterSettings = null;
+  _menuUpdateSettingsHint();
+}
+
+function _menuMarkSettingsDirty() {
+  MENU_FLOW.settingsDirty = true;
+  _menuUpdateSettingsHint();
+}
+
+function _menuUpdateSettingsHint() {
+  const hint = document.getElementById('menu-settings-dirty-hint');
+  if (!hint) return;
+  if (MENU_FLOW.settingsDirty) {
+    hint.textContent = 'Unsaved changes';
+    hint.classList.add('dirty');
+  } else {
+    hint.textContent = '';
+    hint.classList.remove('dirty');
+  }
+}
+
+function menuCommitSettingsDraft() {
+  if (!MENU_SETTINGS_DRAFT) return;
+  _menuApplySettingsRuntime(MENU_SETTINGS_DRAFT);
+  const overrides = _loadSettingsOverrides();
+  overrides.showNotifications = MENU_SETTINGS_DRAFT.showNotifications;
+  overrides.showDayBanner = MENU_SETTINGS_DRAFT.showDayBanner;
+  overrides.menuColorThemes = MENU_SETTINGS_DRAFT.menuColorThemes;
+  overrides.notificationDuration = MENU_SETTINGS_DRAFT.notificationDuration;
+  overrides.keybindings = { ...(MENU_SETTINGS_DRAFT.keybindings || {}) };
+  _saveSettingsOverrides(overrides);
+  MENU_SETTINGS_SNAPSHOT = _menuCloneSettingsData(MENU_SETTINGS_DRAFT);
+  MENU_FLOW.settingsDirty = false;
+  _menuUpdateSettingsHint();
+}
+
+function menuDiscardSettingsDraft() {
+  if (!MENU_SETTINGS_SNAPSHOT) return;
+  _menuApplySettingsRuntime(MENU_SETTINGS_SNAPSHOT);
+  MENU_SETTINGS_DRAFT = _menuCloneSettingsData(MENU_SETTINGS_SNAPSHOT);
+  MENU_FLOW.settingsDirty = false;
+  _menuUpdateSettingsHint();
+}
+
+function menuSettingsPromptAction(action) {
+  if (_listeningForKey) {
+    _listeningForKey.classList.remove('listening');
+    _listeningForKey = null;
+  }
+  if (action === 'save') menuCommitSettingsDraft();
+  if (action === 'discard') menuDiscardSettingsDraft();
+  if (action === 'cancel') {
+    menuSetView('settings', { force: true });
+    return;
+  }
+  const nextView = MENU_FLOW.pendingViewAfterSettings || 'main';
+  MENU_FLOW.pendingViewAfterSettings = null;
+  menuSetView(nextView, { force: true });
+}
+
+function menuBuildSettingsConfirm() {
+  const hint = document.getElementById('menu-settings-confirm-msg');
+  if (!hint) return;
+  hint.textContent = MENU_FLOW.pendingViewAfterSettings
+    ? `Save settings before going to ${MENU_FLOW.pendingViewAfterSettings.replace('-', ' ')}?`
+    : 'Save settings changes?';
+}
+
 function menuBuildSettings() {
+  if (!MENU_SETTINGS_DRAFT) _menuStartSettingsDraft();
   menuBuildSettingsDisplay();
   menuBuildSettingsSound();
   menuBuildSettingsKeybinds();
@@ -231,37 +553,30 @@ function menuSettingsTab(tab) {
 function menuBuildSettingsDisplay() {
   const container = document.getElementById('menu-settings-display');
   container.innerHTML = '';
+  if (!MENU_SETTINGS_DRAFT) return;
 
   const rows = [
-    { label: 'Notifications', key: 'showNotifications', get: () => S.display.showNotifications,
-      set: v => { S.display.showNotifications = v; } },
-    { label: 'Day Banner',    key: 'showDayBanner',     get: () => S.display.showDayBanner ?? true,
-      set: v => { S.display.showDayBanner = v; } },
-    { label: 'Color Themes',  key: 'menuColorThemes',   get: () => S.display.menuColorThemes ?? true,
-      set: v => {
-        S.display.menuColorThemes = v;
-        const tintEl = document.getElementById('menu-tint');
-        if (tintEl) tintEl.classList.toggle('active', v);
-      } },
+    { label: 'Notifications', key: 'showNotifications' },
+    { label: 'Day Banner', key: 'showDayBanner' },
+    { label: 'Color Themes', key: 'menuColorThemes' },
   ];
 
   for (const row of rows) {
     const el = document.createElement('div');
     el.className = 'menu-setting-row';
-    const val = row.get();
+    const val = !!MENU_SETTINGS_DRAFT[row.key];
     el.innerHTML = `
       <span class="menu-setting-label">${row.label}</span>
       <button class="menu-setting-toggle ${val ? 'on' : ''}" data-key="${row.key}">
         ${val ? 'ON' : 'OFF'}
       </button>`;
     el.querySelector('button').onclick = function() {
-      const current = row.get();
-      row.set(!current);
+      const current = !!MENU_SETTINGS_DRAFT[row.key];
+      MENU_SETTINGS_DRAFT[row.key] = !current;
+      _menuApplySettingsRuntime(MENU_SETTINGS_DRAFT);
       this.textContent = !current ? 'ON' : 'OFF';
       this.classList.toggle('on', !current);
-      const overrides = _loadSettingsOverrides();
-      overrides[row.key] = !current;
-      _saveSettingsOverrides(overrides);
+      _menuMarkSettingsDirty();
     };
     container.appendChild(el);
   }
@@ -270,7 +585,7 @@ function menuBuildSettingsDisplay() {
   const durRow = document.createElement('div');
   durRow.className = 'menu-setting-row';
   const durations = { Short: 2000, Normal: 3500, Long: 6000 };
-  const curDur = S.display.notificationDuration ?? 3500;
+  const curDur = MENU_SETTINGS_DRAFT.notificationDuration ?? 3500;
   const curLabel = Object.entries(durations).find(([,v]) => v === curDur)?.[0] ?? 'Normal';
   durRow.innerHTML = `<span class="menu-setting-label">Notif Duration</span>`;
   for (const [label, ms] of Object.entries(durations)) {
@@ -279,12 +594,11 @@ function menuBuildSettingsDisplay() {
     btn.textContent = label;
     btn.style.marginLeft = '4px';
     btn.onclick = () => {
-      S.display.notificationDuration = ms;
+      MENU_SETTINGS_DRAFT.notificationDuration = ms;
+      _menuApplySettingsRuntime(MENU_SETTINGS_DRAFT);
       durRow.querySelectorAll('.menu-setting-toggle').forEach(b => b.classList.remove('on'));
       btn.classList.add('on');
-      const overrides = _loadSettingsOverrides();
-      overrides.notificationDuration = ms;
-      _saveSettingsOverrides(overrides);
+      _menuMarkSettingsDirty();
     };
     durRow.appendChild(btn);
   }
@@ -300,7 +614,8 @@ let _listeningForKey = null;
 function menuBuildSettingsKeybinds() {
   const container = document.getElementById('menu-settings-keybinds');
   container.innerHTML = '';
-  const bindings = S.keybindings || {};
+  if (!MENU_SETTINGS_DRAFT) return;
+  const bindings = MENU_SETTINGS_DRAFT.keybindings || {};
   for (const [action, key] of Object.entries(bindings)) {
     const row = document.createElement('div');
     row.className = 'menu-keybind-row';
@@ -323,25 +638,24 @@ document.addEventListener('keydown', e => {
   if (!_listeningForKey) return;
   e.preventDefault();
   const action = _listeningForKey.dataset.action;
-  S.keybindings[action] = e.key === ' ' ? 'Space' : e.key;
-  _listeningForKey.textContent = S.keybindings[action];
+  const key = e.key === ' ' ? 'Space' : e.key;
+  MENU_SETTINGS_DRAFT.keybindings[action] = key;
+  _menuApplySettingsRuntime(MENU_SETTINGS_DRAFT);
+  _menuMarkSettingsDirty();
+  _listeningForKey.textContent = key;
   _listeningForKey.classList.remove('listening');
   _listeningForKey = null;
-  // Persist
-  const overrides = _loadSettingsOverrides();
-  overrides.keybindings = overrides.keybindings || {};
-  overrides.keybindings[action] = S.keybindings[action];
-  _saveSettingsOverrides(overrides);
 }, true);  // capture so it runs before other keydown handlers
 
 /* ─── Apply persisted settings overrides on load ─── */
 (function applySettingsOverrides() {
   const overrides = _loadSettingsOverrides();
-  if (overrides.showNotifications !== undefined) S.display.showNotifications = overrides.showNotifications;
-  if (overrides.showDayBanner     !== undefined) S.display.showDayBanner     = overrides.showDayBanner;
-  if (overrides.menuColorThemes   !== undefined) S.display.menuColorThemes   = overrides.menuColorThemes;
-  if (overrides.notificationDuration)            S.display.notificationDuration = overrides.notificationDuration;
+  if (overrides.showNotifications !== undefined) S.display.showNotifications = !!overrides.showNotifications;
+  if (overrides.showDayBanner !== undefined) S.display.showDayBanner = !!overrides.showDayBanner;
+  if (overrides.menuColorThemes !== undefined) S.display.menuColorThemes = !!overrides.menuColorThemes;
+  if (overrides.notificationDuration) S.display.notificationDuration = overrides.notificationDuration;
   if (overrides.keybindings) Object.assign(S.keybindings, overrides.keybindings);
+  _menuStartSettingsDraft();
 })();
 
 /* ─── Ambient World ─── */
@@ -355,32 +669,45 @@ const AMBIENT = {
 
 const AMBIENT_BOTS = [];   // holds simple bot state objects (not Robot instances)
 
-const AMBIENT_CROPS = ['wheat', 'carrot', 'corn'];
+const AMBIENT_CROPS = Object.keys(S.crops || {});
 
 function initAmbient() {
+  ambientActive = true;
   // Run migration before anything else
   migrateSingleSlot();
+  AMBIENT.tick = 0;
+  AMBIENT.weather = 'sunny';
+  AMBIENT_BOTS.length = 0;
+  if (typeof particles !== 'undefined') particles = [];
+  isRaining = false;
 
   // Generate world (uses global `world`)
   generateWorld();
 
   // Seed a small tilled+planted area so bots have work immediately
   const cx = Math.floor(WW / 2), cy = Math.floor(WH / 2);
+  const cropPool = AMBIENT_CROPS.length > 0 ? AMBIENT_CROPS : ['wheat'];
   for (let dy = -4; dy <= 4; dy++) {
     for (let dx = -4; dx <= 4; dx++) {
       const tx = cx + dx, ty = cy + dy;
       if (!inBounds(tx, ty)) continue;
       if (world[ty][tx].type === 'grass' || world[ty][tx].type === 'flower') {
         world[ty][tx].type = 'tilled';
-        const cropType = AMBIENT_CROPS[Math.floor(Math.random() * AMBIENT_CROPS.length)];
-        world[ty][tx].crop = { type: cropType, stage: Math.floor(Math.random() * 3), watered: false };
+        const cropType = cropPool[Math.floor(Math.random() * cropPool.length)];
+        world[ty][tx].crop = {
+          type: cropType,
+          stage: Math.floor(Math.random() * 3),
+          growTimer: 0,
+          waterCount: 0,
+          watered: false,
+        };
       }
     }
   }
 
   // Two ambient bots
-  AMBIENT_BOTS.push({ tx: cx - 2, ty: cy - 2, px: (cx-2)*TILE, py: (cy-2)*TILE, state: 'idle', timer: 0, crop: 'wheat' });
-  AMBIENT_BOTS.push({ tx: cx + 2, ty: cy + 2, px: (cx+2)*TILE, py: (cy+2)*TILE, state: 'idle', timer: 30, crop: 'carrot' });
+  AMBIENT_BOTS.push({ tx: cx - 2, ty: cy - 2, px: (cx-2)*TILE, py: (cy-2)*TILE, state: 'idle', timer: 0, crop: cropPool[0] || 'wheat' });
+  AMBIENT_BOTS.push({ tx: cx + 2, ty: cy + 2, px: (cx+2)*TILE, py: (cy+2)*TILE, state: 'idle', timer: 30, crop: cropPool[1] || cropPool[0] || 'wheat' });
 
   // Camera centered on farm patch
   AMBIENT.panX = window.innerWidth/2  - (cx * TILE + TILE/2) * camera.zoom;
@@ -395,6 +722,7 @@ function initAmbient() {
 }
 
 function updateAmbient() {
+  if (!ambientActive) return;
   AMBIENT.tick++;
 
   // ─ Weather / time ─
@@ -501,7 +829,7 @@ function _updateAmbientBot(bot) {
           break;
         case 'plant':
           if (tile.type === 'tilled' && !tile.crop) {
-            tile.crop = { type: bot.crop, stage: 0, watered: false };
+            tile.crop = { type: bot.crop, stage: 0, growTimer: 0, waterCount: 0, watered: false };
           }
           break;
         case 'till':
@@ -579,20 +907,31 @@ function getMenuTint() {
   return `hsl(${h.toFixed(1)}, ${s.toFixed(1)}%, ${l.toFixed(1)}%)`;
 }
 
-/* ─── Escape key ─── */
-document.addEventListener('keydown', e => {
-  if (e.key !== 'Escape') return;
+/* ─── Escape routing ─── */
+function menuHandleEscape() {
   const screen = document.getElementById('menu-screen');
+  if (!screen) return false;
   const isHidden = screen.classList.contains('hidden');
+
   if (!isHidden) {
-    // Back out of sub-views or resume game
-    const activeView = document.querySelector('.menu-view.active');
-    if (activeView && activeView.id !== 'menu-main') {
-      menuShowView('main');
-    } else if (gameState === 'menu' && currentSlot > 0) {
-      resumeGame();
+    if (MENU_FLOW.view === 'settings-confirm') {
+      menuSettingsPromptAction('cancel');
+      return true;
     }
-  } else if (gameState === 'playing') {
-    openMenu();
+    if (MENU_FLOW.view !== 'main') {
+      menuSetView('main');
+      return true;
+    }
+    if (menuPauseMode) {
+      resumeGame();
+      return true;
+    }
+    return true;
   }
-});
+
+  if (gameState === 'playing') {
+    openMenu();
+    return true;
+  }
+  return false;
+}

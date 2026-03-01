@@ -66,11 +66,9 @@ function update() {
       document.getElementById('day-banner-text').textContent = `Day ${day}`;
       document.getElementById('day-banner-sub').textContent = `${SEASONS[season]} • ${rainDay ? '🌧 Rainy Day' : '☀️ Clear Day'}`;
       bannerEl.classList.add('show');
-      setTimeout(() => {
-        bannerEl.classList.remove('show');
-        setTimeout(() => { if (typeof showGazette === 'function') showGazette(); }, 500);
-      }, 2500);
+      setTimeout(() => bannerEl.classList.remove('show'), 2500);
     }
+    setTimeout(() => { if (typeof showGazette === 'function') showGazette(); }, 3000);
 
     if (season !== prevSeason) notify(`🌿 Season changed to ${SEASONS[season]}!`);
     if (rainDay) notify(`🌧 It's raining! Crops will be watered today.`);
