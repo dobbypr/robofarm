@@ -18,6 +18,9 @@ function openMenu() {
   const screen = document.getElementById('menu-screen');
   screen.classList.remove('hidden', 'fade-out');
   document.body.classList.add('show-system-cursor');
+  if (S.display.menuColorThemes !== false) {
+    document.getElementById('menu-tint')?.classList.add('active');
+  }
   menuShowView('main');
   menuRefreshContinueBtn();
   if (gameState === 'playing') {
@@ -40,6 +43,7 @@ function openMenu() {
 function closeMenu() {
   const screen = document.getElementById('menu-screen');
   screen.classList.add('fade-out');
+  document.getElementById('menu-tint')?.classList.remove('active');
   const newGameBtn = document.querySelector('#menu-main .menu-buttons .menu-btn:nth-child(2)');
   if (newGameBtn) newGameBtn.style.display = '';
   setTimeout(() => { screen.classList.add('hidden'); syncCursorMode(); }, 120);
@@ -148,6 +152,7 @@ function launchGame(slot, isNew) {
 
   setTimeout(() => {
     screen.classList.add('hidden');
+    document.getElementById('menu-tint')?.classList.remove('active');
 
     // Reset state for new or loaded game
     if (isNew) {
@@ -232,6 +237,12 @@ function menuBuildSettingsDisplay() {
       set: v => { S.display.showNotifications = v; } },
     { label: 'Day Banner',    key: 'showDayBanner',     get: () => S.display.showDayBanner ?? true,
       set: v => { S.display.showDayBanner = v; } },
+    { label: 'Color Themes',  key: 'menuColorThemes',   get: () => S.display.menuColorThemes ?? true,
+      set: v => {
+        S.display.menuColorThemes = v;
+        const tintEl = document.getElementById('menu-tint');
+        if (tintEl) tintEl.classList.toggle('active', v);
+      } },
   ];
 
   for (const row of rows) {
@@ -328,6 +339,7 @@ document.addEventListener('keydown', e => {
   const overrides = _loadSettingsOverrides();
   if (overrides.showNotifications !== undefined) S.display.showNotifications = overrides.showNotifications;
   if (overrides.showDayBanner     !== undefined) S.display.showDayBanner     = overrides.showDayBanner;
+  if (overrides.menuColorThemes   !== undefined) S.display.menuColorThemes   = overrides.menuColorThemes;
   if (overrides.notificationDuration)            S.display.notificationDuration = overrides.notificationDuration;
   if (overrides.keybindings) Object.assign(S.keybindings, overrides.keybindings);
 })();
@@ -444,6 +456,12 @@ function updateAmbient() {
   }
 
   updateParticles();
+
+  // Drive the CSS tint div
+  if (S.display.menuColorThemes !== false) {
+    const tintEl = document.getElementById('menu-tint');
+    if (tintEl) tintEl.style.backgroundColor = getMenuTint();
+  }
 }
 
 function _updateAmbientBot(bot) {

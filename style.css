@@ -560,3 +560,11 @@ textarea.code-area:focus { border-color: var(--green); outline: none; }
   font-family: 'VT323', monospace; font-size: 17px; color: var(--text-dim);
   padding: 20px 0; text-align: center; width: 320px;
 }
+
+/* Menu tint overlay */
+#menu-tint {
+  position: fixed; inset: 0; z-index: 799;
+  pointer-events: none; mix-blend-mode: overlay;
+  opacity: 0; transition: background-color 1.2s ease, opacity 0.3s ease;
+}
+#menu-tint.active { opacity: 0.55; }
