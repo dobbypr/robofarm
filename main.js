@@ -110,35 +110,8 @@ function loop() {
  * ═══════════════════════════════════════════════════════════════════════════ */
 window.addEventListener('resize', resize);
 resize();
-generateWorld();
-
-const loaded = loadGame();
-if (!loaded) {
-  notify('🌾 Welcome to Robo Farm! Press F for the guide.');
-  notify('🌱 Start by tilling soil (key 2) and planting seeds!');
-  rainDay = Math.random() < S.time.rainChance['Spring'];
-  setTimeout(() => {
-    openModal('changelog');
-  }, 600);
-} else {
-  // Show changelog once per version update
-  const lastSeen = localStorage.getItem('roboFarm_changelogSeen');
-  if (lastSeen !== 'v0.2.1') {
-    setTimeout(() => { openModal('changelog'); localStorage.setItem('roboFarm_changelogSeen', 'v0.2.1'); }, 400);
-  }
-}
-
-// Place starter robots if any
-for (let i = 0; i < S.player.startRobots; i++) {
-  const bot = new Robot(S.player.startX + 2 + i, S.player.startY + 2);
-  robots.push(bot);
-}
-
-// Camera init
-camera.x = window.innerWidth/2 - (player.px + TILE/2) * camera.zoom;
-camera.y = window.innerHeight/2 - (player.py + TILE/2) * camera.zoom;
-
-updateUI();
+initAmbient();   // menu.js: generates world, seeds bots, migrates old save
+openMenu();      // menu.js: shows the title screen
 loop();
 
 /* Click outside modals to close */
