@@ -57,11 +57,13 @@ function update() {
     onNewDay();
     if (currentSlot > 0) saveGame(currentSlot);
 
-    const bannerEl = document.getElementById('day-banner');
-    document.getElementById('day-banner-text').textContent = `Day ${day}`;
-    document.getElementById('day-banner-sub').textContent = `${SEASONS[season]} • ${rainDay ? '🌧 Rainy Day' : '☀️ Clear Day'}`;
-    bannerEl.classList.add('show');
-    setTimeout(() => bannerEl.classList.remove('show'), 2500);
+    if (S.display.showDayBanner !== false) {
+      const bannerEl = document.getElementById('day-banner');
+      document.getElementById('day-banner-text').textContent = `Day ${day}`;
+      document.getElementById('day-banner-sub').textContent = `${SEASONS[season]} • ${rainDay ? '🌧 Rainy Day' : '☀️ Clear Day'}`;
+      bannerEl.classList.add('show');
+      setTimeout(() => bannerEl.classList.remove('show'), 2500);
+    }
 
     if (season !== prevSeason) notify(`🌿 Season changed to ${SEASONS[season]}!`);
     if (rainDay) notify(`🌧 It's raining! Crops will be watered today.`);

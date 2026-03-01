@@ -26,15 +26,22 @@ function openMenu() {
     // show "Back to Game" instead of Quit when pausing mid-game
     const quitBtn = document.querySelector('#menu-main .menu-btn.danger');
     if (quitBtn) { quitBtn.textContent = 'BACK TO GAME'; quitBtn.onclick = resumeGame; }
+    // hide New Game to prevent accidental world reset while playing
+    const newGameBtn = document.querySelector('#menu-main .menu-buttons .menu-btn:nth-child(2)');
+    if (newGameBtn && currentSlot > 0) newGameBtn.style.display = 'none';
   } else {
     const quitBtn = document.querySelector('#menu-main .menu-btn.danger');
     if (quitBtn) { quitBtn.textContent = 'QUIT'; quitBtn.onclick = menuQuit; }
+    const newGameBtn = document.querySelector('#menu-main .menu-buttons .menu-btn:nth-child(2)');
+    if (newGameBtn) newGameBtn.style.display = '';
   }
 }
 
 function closeMenu() {
   const screen = document.getElementById('menu-screen');
   screen.classList.add('fade-out');
+  const newGameBtn = document.querySelector('#menu-main .menu-buttons .menu-btn:nth-child(2)');
+  if (newGameBtn) newGameBtn.style.display = '';
   setTimeout(() => { screen.classList.add('hidden'); syncCursorMode(); }, 120);
 }
 
