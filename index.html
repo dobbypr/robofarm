@@ -14,6 +14,71 @@
 <canvas id="game"></canvas>
 <canvas id="cursor-canvas"></canvas>
 
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MENU SCREEN
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div id="menu-screen">
+  <!-- Main view -->
+  <div id="menu-main" class="menu-view active">
+    <div class="menu-logo">🌾</div>
+    <div class="menu-title">ROBO FARM</div>
+    <div class="menu-tagline">automate your harvest</div>
+    <div class="menu-buttons">
+      <button class="menu-btn primary" id="menu-btn-continue" onclick="menuContinue()">▶&nbsp; CONTINUE</button>
+      <button class="menu-btn" onclick="menuShowView('new-game')">NEW GAME</button>
+      <button class="menu-btn" onclick="menuShowView('settings')">SETTINGS</button>
+      <button class="menu-btn danger" onclick="menuQuit()">QUIT</button>
+    </div>
+    <div class="menu-version" id="menu-version-label">v0.2.1</div>
+  </div>
+
+  <!-- New Game / slot picker -->
+  <div id="menu-new-game" class="menu-view">
+    <div class="menu-sub-title">SELECT SLOT</div>
+    <div class="menu-slots" id="menu-new-slots"></div>
+    <button class="menu-btn back-btn" onclick="menuShowView('main')">◀ BACK</button>
+  </div>
+
+  <!-- Load Game / slot picker -->
+  <div id="menu-load-game" class="menu-view">
+    <div class="menu-sub-title">LOAD GAME</div>
+    <div class="menu-slots" id="menu-load-slots"></div>
+    <button class="menu-btn back-btn" onclick="menuShowView('main')">◀ BACK</button>
+  </div>
+
+  <!-- Overwrite confirm -->
+  <div id="menu-confirm" class="menu-view">
+    <div class="menu-sub-title" style="color:var(--gold)">⚠ OVERWRITE SAVE?</div>
+    <div class="menu-confirm-msg" id="menu-confirm-msg"></div>
+    <div class="menu-confirm-note">This cannot be undone.</div>
+    <div class="menu-buttons">
+      <button class="menu-btn danger" id="menu-confirm-ok">OVERWRITE</button>
+      <button class="menu-btn" onclick="menuShowView('new-game')">CANCEL</button>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div id="menu-settings" class="menu-view">
+    <div class="menu-sub-title">SETTINGS</div>
+    <div class="modal-tabs" style="margin-bottom:14px">
+      <button class="tab-btn active" onclick="menuSettingsTab('display')">Display</button>
+      <button class="tab-btn" onclick="menuSettingsTab('sound')">Sound</button>
+      <button class="tab-btn" onclick="menuSettingsTab('keybinds')">Keybinds</button>
+    </div>
+    <div id="menu-settings-display" class="menu-settings-tab active"></div>
+    <div id="menu-settings-sound" class="menu-settings-tab" style="display:none"></div>
+    <div id="menu-settings-keybinds" class="menu-settings-tab" style="display:none"></div>
+    <button class="menu-btn back-btn" onclick="menuShowView('main')">◀ BACK</button>
+  </div>
+
+  <!-- Quit -->
+  <div id="menu-quit" class="menu-view">
+    <div class="menu-sub-title">QUIT</div>
+    <div class="menu-confirm-note" style="margin-bottom:18px">Close the browser tab to exit.</div>
+    <button class="menu-btn" onclick="menuShowView('main')">◀ BACK</button>
+  </div>
+</div>
+
 <!-- Top Bar -->
 <div id="topbar">
   <div id="game-title">🌾 ROBO FARM</div>
@@ -664,6 +729,7 @@ if (t) {
 <script src="render.js"></script>
 <script src="loop.js"></script>
 <script src="ui.js"></script>
+<script src="menu.js"></script>
 <script src="sandbox.js"></script>
 <script src="io.js"></script>
 <script src="main.js"></script>
