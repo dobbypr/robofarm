@@ -116,6 +116,17 @@ function render() {
     drawRain();
   }
 
+  // Menu color theme tint
+  if (gameState !== 'playing') {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = 'color';
+    ctx.globalAlpha = 0.65;
+    ctx.fillStyle = getMenuTint();
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+  }
+
   ctx.restore();
 }
 

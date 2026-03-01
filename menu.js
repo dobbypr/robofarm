@@ -518,6 +518,42 @@ function _ambientFindTarget(bot) {
   return best;
 }
 
+/* ─── Menu color themes ─── */
+const MENU_THEMES = [
+  { name: 'rainbow',  hsl: t => [t * 0.3 % 360, 80, 55] },
+  { name: 'noir',     hsl: () => [220,  5, 45] },
+  { name: 'crimson',  hsl: () => [355, 85, 50] },
+  { name: 'ocean',    hsl: () => [210, 90, 50] },
+  { name: 'toxic',    hsl: () => [115, 85, 42] },
+  { name: 'amethyst', hsl: () => [275, 75, 55] },
+  { name: 'inferno',  hsl: t => [15 + Math.sin(t * 0.05) * 12, 95, 55] },
+];
+const _THEME_HOLD = 480;   // ticks at full intensity (~8s)
+const _THEME_FADE = 60;    // ticks for crossfade (~1s)
+const _THEME_CYCLE = _THEME_HOLD + _THEME_FADE;
+
+function getMenuTint() {
+  const t = AMBIENT.tick;
+  const slot = Math.floor(t / _THEME_CYCLE);
+  const phase = t % _THEME_CYCLE;
+  const cur = MENU_THEMES[slot % MENU_THEMES.length];
+  const nxt = MENU_THEMES[(slot + 1) % MENU_THEMES.length];
+
+  const blend = phase < _THEME_HOLD ? 0 : (phase - _THEME_HOLD) / _THEME_FADE;
+  const [h1, s1, l1] = cur.hsl(t);
+  const [h2, s2, l2] = nxt.hsl(t);
+
+  // Shortest-path hue lerp
+  let hd = h2 - h1;
+  if (hd > 180) hd -= 360;
+  if (hd < -180) hd += 360;
+  const h = (h1 + hd * blend + 360) % 360;
+  const s = s1 + (s2 - s1) * blend;
+  const l = l1 + (l2 - l1) * blend;
+
+  return `hsl(${h.toFixed(1)}, ${s.toFixed(1)}%, ${l.toFixed(1)}%)`;
+}
+
 /* ─── Escape key ─── */
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
