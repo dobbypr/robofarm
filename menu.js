@@ -17,6 +17,7 @@ function menuShowView(name) {
 function openMenu() {
   const screen = document.getElementById('menu-screen');
   screen.classList.remove('hidden', 'fade-out');
+  document.body.classList.add('show-system-cursor');
   menuShowView('main');
   menuRefreshContinueBtn();
   if (gameState === 'playing') {
@@ -34,7 +35,7 @@ function openMenu() {
 function closeMenu() {
   const screen = document.getElementById('menu-screen');
   screen.classList.add('fade-out');
-  setTimeout(() => screen.classList.add('hidden'), 120);
+  setTimeout(() => { screen.classList.add('hidden'); syncCursorMode(); }, 120);
 }
 
 function resumeGame() {
