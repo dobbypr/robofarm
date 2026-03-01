@@ -55,3 +55,10 @@ const player = {
  * CAMERA
  * ═══════════════════════════════════════════════════════════════════════════ */
 const camera = { x: 0, y: 0, tx: 0, ty: 0, zoom: S.display.zoomLevel };
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * GAME STATE FLAGS
+ * ═══════════════════════════════════════════════════════════════════════════ */
+let gameState = 'menu';   // 'menu' | 'playing'
+let currentSlot = 0;      // 0 = no slot loaded; 1–3 = active save slot
+let playtime = 0;         // ticks elapsed in-game (not counting menu time)
