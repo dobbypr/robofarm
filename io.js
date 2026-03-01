@@ -4,6 +4,8 @@
 function buildSaveObject() {
   return {
     v: 2, coins, day, tick, season, isRaining, rainDay, inventory, robotsOwned,
+    savedAt: new Date().toISOString(),
+    playtime,
     nextRobotId, priceMultipliers,
     economy: {
       rfs:   { price: COMPANIES.rfs.price,   priceHistory: COMPANIES.rfs.priceHistory,   sharesOwned: COMPANIES.rfs.sharesOwned   },
