@@ -2,6 +2,10 @@
  * GAME LOOP
  * ═══════════════════════════════════════════════════════════════════════════ */
 function update() {
+  if (gameState !== 'playing') return;
+
+  playtime++;
+
   // Player movement
   let dx = 0, dy = 0;
   if (keys['KeyW'] || keys['ArrowUp']) dy = -1;
@@ -51,7 +55,7 @@ function update() {
     rainDay = Math.random() < (S.time.rainChance[SEASONS[season]] || 0.2);
     refreshPrices();
     onNewDay();
-    saveGame();
+    if (currentSlot > 0) saveGame(currentSlot);
 
     const bannerEl = document.getElementById('day-banner');
     document.getElementById('day-banner-text').textContent = `Day ${day}`;
