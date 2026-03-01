@@ -190,6 +190,140 @@ function launchGame(slot, isNew) {
   }, 120);
 }
 
+/* ─── Settings ─── */
+const MENU_SETTINGS_STORE = 'roboFarm_settings';
+
+function _loadSettingsOverrides() {
+  try { return JSON.parse(localStorage.getItem(MENU_SETTINGS_STORE) || '{}'); } catch { return {}; }
+}
+function _saveSettingsOverrides(obj) {
+  localStorage.setItem(MENU_SETTINGS_STORE, JSON.stringify(obj));
+}
+
+function menuBuildSettings() {
+  menuBuildSettingsDisplay();
+  menuBuildSettingsSound();
+  menuBuildSettingsKeybinds();
+}
+
+function menuSettingsTab(tab) {
+  document.querySelectorAll('.menu-settings-tab').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('#menu-settings .tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`menu-settings-${tab}`).style.display = 'block';
+  const btns = [...document.querySelectorAll('#menu-settings .tab-btn')];
+  const idx = ['display','sound','keybinds'].indexOf(tab);
+  if (btns[idx]) btns[idx].classList.add('active');
+}
+
+function menuBuildSettingsDisplay() {
+  const container = document.getElementById('menu-settings-display');
+  container.innerHTML = '';
+
+  const rows = [
+    { label: 'Notifications', key: 'showNotifications', get: () => S.display.showNotifications,
+      set: v => { S.display.showNotifications = v; } },
+    { label: 'Day Banner',    key: 'showDayBanner',     get: () => S.display.showDayBanner ?? true,
+      set: v => { S.display.showDayBanner = v; } },
+  ];
+
+  for (const row of rows) {
+    const el = document.createElement('div');
+    el.className = 'menu-setting-row';
+    const val = row.get();
+    el.innerHTML = `
+      <span class="menu-setting-label">${row.label}</span>
+      <button class="menu-setting-toggle ${val ? 'on' : ''}" data-key="${row.key}">
+        ${val ? 'ON' : 'OFF'}
+      </button>`;
+    el.querySelector('button').onclick = function() {
+      const current = row.get();
+      row.set(!current);
+      this.textContent = !current ? 'ON' : 'OFF';
+      this.classList.toggle('on', !current);
+      const overrides = _loadSettingsOverrides();
+      overrides[row.key] = !current;
+      _saveSettingsOverrides(overrides);
+    };
+    container.appendChild(el);
+  }
+
+  // Notification duration
+  const durRow = document.createElement('div');
+  durRow.className = 'menu-setting-row';
+  const durations = { Short: 2000, Normal: 3500, Long: 6000 };
+  const curDur = S.display.notificationDuration ?? 3500;
+  const curLabel = Object.entries(durations).find(([,v]) => v === curDur)?.[0] ?? 'Normal';
+  durRow.innerHTML = `<span class="menu-setting-label">Notif Duration</span>`;
+  for (const [label, ms] of Object.entries(durations)) {
+    const btn = document.createElement('button');
+    btn.className = 'menu-setting-toggle' + (label === curLabel ? ' on' : '');
+    btn.textContent = label;
+    btn.style.marginLeft = '4px';
+    btn.onclick = () => {
+      S.display.notificationDuration = ms;
+      durRow.querySelectorAll('.menu-setting-toggle').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      const overrides = _loadSettingsOverrides();
+      overrides.notificationDuration = ms;
+      _saveSettingsOverrides(overrides);
+    };
+    durRow.appendChild(btn);
+  }
+  container.appendChild(durRow);
+}
+
+function menuBuildSettingsSound() {
+  const container = document.getElementById('menu-settings-sound');
+  container.innerHTML = `<div class="menu-sound-placeholder">🔇 No audio yet — coming soon.</div>`;
+}
+
+let _listeningForKey = null;
+function menuBuildSettingsKeybinds() {
+  const container = document.getElementById('menu-settings-keybinds');
+  container.innerHTML = '';
+  const bindings = S.keybindings || {};
+  for (const [action, key] of Object.entries(bindings)) {
+    const row = document.createElement('div');
+    row.className = 'menu-keybind-row';
+    row.innerHTML = `
+      <span class="menu-keybind-action">${action}</span>
+      <button class="menu-keybind-key" data-action="${action}">${key}</button>`;
+    row.querySelector('button').onclick = function() {
+      if (_listeningForKey) {
+        _listeningForKey.classList.remove('listening');
+      }
+      _listeningForKey = this;
+      this.classList.add('listening');
+      this.textContent = '...';
+    };
+    container.appendChild(row);
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (!_listeningForKey) return;
+  e.preventDefault();
+  const action = _listeningForKey.dataset.action;
+  S.keybindings[action] = e.key === ' ' ? 'Space' : e.key;
+  _listeningForKey.textContent = S.keybindings[action];
+  _listeningForKey.classList.remove('listening');
+  _listeningForKey = null;
+  // Persist
+  const overrides = _loadSettingsOverrides();
+  overrides.keybindings = overrides.keybindings || {};
+  overrides.keybindings[action] = S.keybindings[action];
+  _saveSettingsOverrides(overrides);
+}, true);  // capture so it runs before other keydown handlers
+
+/* ─── Apply persisted settings overrides on load ─── */
+(function applySettingsOverrides() {
+  const overrides = _loadSettingsOverrides();
+  if (overrides.showNotifications !== undefined) S.display.showNotifications = overrides.showNotifications;
+  if (overrides.showDayBanner     !== undefined) S.display.showDayBanner     = overrides.showDayBanner;
+  if (overrides.notificationDuration)            S.display.notificationDuration = overrides.notificationDuration;
+  if (overrides.keybindings) Object.assign(S.keybindings, overrides.keybindings);
+})();
+
 /* ─── Escape key ─── */
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
