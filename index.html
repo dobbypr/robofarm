@@ -29,7 +29,7 @@
     <button class="top-btn" onclick="saveGame()" title="Save Game">💾</button>
     <button class="top-btn" onclick="openModal('economy')" style="border-color:#4a7a3a;color:#80d060">📈 Economy</button>
     <button class="top-btn" onclick="openModal('inventory')" title="Inventory [I]">🎒 Bag</button>
-    <button class="top-btn" onclick="openModal('changelog')" style="border-color:#3a5a3a;color:#80cc80">📋 v0.2</button>
+    <button class="top-btn" onclick="openModal('changelog')" style="border-color:#3a5a3a;color:#80cc80">📋 v0.2.1</button>
   </div>
 </div>
 <div id="save-flash" style="position:fixed;top:50px;right:12px;z-index:601;pointer-events:none;font-family:'Press Start 2P',monospace;font-size:7px;color:#80ff80;opacity:0;transition:opacity 0.3s">✓ saved</div>
@@ -352,7 +352,44 @@ if (t) {
     <span class="modal-close" onclick="closeModal('changelog')">✕</span>
   </div>
   <div class="modal-body changelog-body">
-    <div class="changelog-version">ROBO FARM  ·  v0.2</div>
+    <div class="changelog-version">ROBO FARM  ·  v0.2.1</div>
+    <div class="changelog-subtitle">"The Great Unbundling" — more robots, markets, and a cleaner engine.</div>
+
+    <div class="changelog-section">
+      <div class="changelog-section-title">★ NEW FEATURES</div>
+      <div class="changelog-entry">
+        <div class="changelog-star">📈</div>
+        <div class="changelog-text">
+          <strong>Economy &amp; Markets</strong><br>
+          A full stock market lives in the <strong>[📈 Economy]</strong> tab. Trade shares in <em>RFS</em> (Robot Farming Society) and <em>BuPop Inc.</em>, collect dividends, watch live sparkline charts, and unlock perks tied to shareholding. Your crops move their prices. Get in early.
+        </div>
+      </div>
+      <div class="changelog-entry">
+        <div class="changelog-star">🦾</div>
+        <div class="changelog-text">
+          <strong>Robot Variants</strong><br>
+          Three robot types now: <em>Rust</em> (scavenger, runs on crops, never dies), <em>Basic</em> (solid all-rounder), <em>Pro</em> (fast, massive work radius). Buy them at the Shop under Equipment. The last type you bought auto-selects for placement.
+        </div>
+      </div>
+      <div class="changelog-entry">
+        <div class="changelog-star">🎒</div>
+        <div class="changelog-text">
+          <strong>Inventory System</strong><br>
+          You and your robots now have proper inventories with slot limits. Open <strong>[🎒 Bag]</strong> to see what everyone's carrying, give seeds to robots, and collect their harvests — all in one place.
+        </div>
+      </div>
+    </div>
+
+    <div class="changelog-section">
+      <div class="changelog-section-title">✦ UNDER THE HOOD</div>
+      <div class="changelog-entry">
+        <div class="changelog-star">🔧</div>
+        <div class="changelog-text"><strong>The Great Unbundling</strong> — The entire game was extracted from one massive index.html into 14 focused JS files and a separate style.css. Easier to navigate, easier to mod, easier to build on.</div>
+      </div>
+    </div>
+
+    <div style="border-top:1px solid var(--ui-border);margin:14px 0"></div>
+    <div class="changelog-version" style="font-size:8px">ROBO FARM  ·  v0.2</div>
     <div class="changelog-subtitle">"The Tinkerer's Update" — your farm, your files, your code.</div>
 
     <div class="changelog-section">

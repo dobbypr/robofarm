@@ -123,8 +123,8 @@ if (!loaded) {
 } else {
   // Show changelog once per version update
   const lastSeen = localStorage.getItem('roboFarm_changelogSeen');
-  if (lastSeen !== 'v0.2') {
-    setTimeout(() => { openModal('changelog'); localStorage.setItem('roboFarm_changelogSeen', 'v0.2'); }, 400);
+  if (lastSeen !== 'v0.2.1') {
+    setTimeout(() => { openModal('changelog'); localStorage.setItem('roboFarm_changelogSeen', 'v0.2.1'); }, 400);
   }
 }
 
