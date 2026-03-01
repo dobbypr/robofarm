@@ -119,8 +119,8 @@ function render() {
   // Menu color theme tint
   if (gameState !== 'playing') {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.globalCompositeOperation = 'color';
-    ctx.globalAlpha = 0.65;
+    ctx.globalCompositeOperation = 'overlay';
+    ctx.globalAlpha = 0.45;
     ctx.fillStyle = getMenuTint();
     ctx.fillRect(0, 0, W, H);
     ctx.globalCompositeOperation = 'source-over';

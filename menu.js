@@ -191,8 +191,8 @@ function launchGame(slot, isNew) {
     // Show changelog once per version for returning players
     if (!isNew) {
       const lastSeen = localStorage.getItem('roboFarm_changelogSeen');
-      if (lastSeen !== 'v0.2.1') {
-        setTimeout(() => { openModal('changelog'); localStorage.setItem('roboFarm_changelogSeen', 'v0.2.1'); }, 400);
+      if (lastSeen !== 'v0.2.2') {
+        setTimeout(() => { openModal('changelog'); localStorage.setItem('roboFarm_changelogSeen', 'v0.2.2'); }, 400);
       }
     }
   }, 120);

@@ -29,7 +29,7 @@
       <button class="menu-btn" onclick="menuShowView('settings')">SETTINGS</button>
       <button class="menu-btn danger" onclick="menuQuit()">QUIT</button>
     </div>
-    <div class="menu-version" id="menu-version-label">v0.2.1</div>
+    <div class="menu-version" id="menu-version-label">v0.2.2</div>
   </div>
 
   <!-- New Game / slot picker -->
@@ -94,7 +94,7 @@
     <button class="top-btn" onclick="saveGame(currentSlot)" title="Save Game">💾</button>
     <button class="top-btn" onclick="openModal('economy')" style="border-color:#4a7a3a;color:#80d060">📈 Economy</button>
     <button class="top-btn" onclick="openModal('inventory')" title="Inventory [I]">🎒 Bag</button>
-    <button class="top-btn" onclick="openModal('changelog')" style="border-color:#3a5a3a;color:#80cc80">📋 v0.2.1</button>
+    <button class="top-btn" onclick="openModal('changelog')" style="border-color:#3a5a3a;color:#80cc80">📋 v0.2.2</button>
   </div>
 </div>
 <div id="save-flash" style="position:fixed;top:50px;right:12px;z-index:601;pointer-events:none;font-family:'Press Start 2P',monospace;font-size:7px;color:#80ff80;opacity:0;transition:opacity 0.3s">✓ saved</div>
@@ -417,7 +417,48 @@ if (t) {
     <span class="modal-close" onclick="closeModal('changelog')">✕</span>
   </div>
   <div class="modal-body changelog-body">
-    <div class="changelog-version">ROBO FARM  ·  v0.2.1</div>
+    <div class="changelog-version">ROBO FARM  ·  v0.2.2</div>
+    <div class="changelog-subtitle">"The Welcome Mat" — a proper front door for your farm.</div>
+
+    <div class="changelog-section">
+      <div class="changelog-section-title">★ NEW FEATURES</div>
+      <div class="changelog-entry">
+        <div class="changelog-star">🌾</div>
+        <div class="changelog-text">
+          <strong>Title Screen</strong><br>
+          The game now opens with a proper menu — your farm running live in the background, shifting through colour themes while you decide what to do next. First impressions matter.
+        </div>
+      </div>
+      <div class="changelog-entry">
+        <div class="changelog-star">💾</div>
+        <div class="changelog-text">
+          <strong>3-Slot Save System</strong><br>
+          Three independent save slots, each showing day, season, coins, robot count, and time played. Start fresh, load an old run, or overwrite with confidence. Old single-slot saves migrate automatically to Slot 1.
+        </div>
+      </div>
+      <div class="changelog-entry">
+        <div class="changelog-star">⚙️</div>
+        <div class="changelog-text">
+          <strong>Settings Panel</strong><br>
+          Toggle notifications, adjust their duration, and rebind any key — all from the menu. Your preferences survive a reload.
+        </div>
+      </div>
+    </div>
+
+    <div class="changelog-section">
+      <div class="changelog-section-title">✦ SMALL THINGS THAT FEEL GREAT</div>
+      <div class="changelog-entry">
+        <div class="changelog-star">⏸</div>
+        <div class="changelog-text"><strong>Pause anywhere</strong> — press Escape mid-game to open the menu. The farm freezes, your progress is safe. Press Escape again to jump back in.</div>
+      </div>
+      <div class="changelog-entry">
+        <div class="changelog-star">🎨</div>
+        <div class="changelog-text"><strong>Colour themes</strong> — the background cycles through rainbow, noir, crimson, ocean, toxic, amethyst, and inferno while you're on the menu. Just a little mood lighting.</div>
+      </div>
+    </div>
+
+    <div style="border-top:1px solid var(--ui-border);margin:14px 0"></div>
+    <div class="changelog-version" style="font-size:8px">ROBO FARM  ·  v0.2.1</div>
     <div class="changelog-subtitle">"The Great Unbundling" — more robots, markets, and a cleaner engine.</div>
 
     <div class="changelog-section">
