@@ -2,7 +2,7 @@
  * GAME LOOP
  * ═══════════════════════════════════════════════════════════════════════════ */
 function update() {
-  if (gameState !== 'playing') return;
+  if (gameState !== 'playing') { if (typeof updateAmbient === 'function') updateAmbient(); return; }
 
   playtime++;
 

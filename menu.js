@@ -325,6 +325,199 @@ document.addEventListener('keydown', e => {
   if (overrides.keybindings) Object.assign(S.keybindings, overrides.keybindings);
 })();
 
+/* ─── Ambient World ─── */
+const AMBIENT = {
+  tick: 0,
+  weatherTimer: 0,
+  weather: 'sunny',   // 'sunny' | 'overcast' | 'rain' | 'hail'
+  // Slow camera pan
+  panX: 0, panY: 0, panTargetX: 0, panTargetY: 0,
+};
+
+const AMBIENT_BOTS = [];   // holds simple bot state objects (not Robot instances)
+
+const AMBIENT_CROPS = ['wheat', 'carrot', 'corn'];
+
+function initAmbient() {
+  // Run migration before anything else
+  migrateSingleSlot();
+
+  // Generate world (uses global `world`)
+  generateWorld();
+
+  // Seed a small tilled+planted area so bots have work immediately
+  const cx = Math.floor(WW / 2), cy = Math.floor(WH / 2);
+  for (let dy = -4; dy <= 4; dy++) {
+    for (let dx = -4; dx <= 4; dx++) {
+      const tx = cx + dx, ty = cy + dy;
+      if (!inBounds(tx, ty)) continue;
+      if (world[ty][tx].type === 'grass' || world[ty][tx].type === 'flower') {
+        world[ty][tx].type = 'tilled';
+        const cropType = AMBIENT_CROPS[Math.floor(Math.random() * AMBIENT_CROPS.length)];
+        world[ty][tx].crop = { type: cropType, stage: Math.floor(Math.random() * 3), watered: false };
+      }
+    }
+  }
+
+  // Two ambient bots
+  AMBIENT_BOTS.push({ tx: cx - 2, ty: cy - 2, px: (cx-2)*TILE, py: (cy-2)*TILE, state: 'idle', timer: 0, crop: 'wheat' });
+  AMBIENT_BOTS.push({ tx: cx + 2, ty: cy + 2, px: (cx+2)*TILE, py: (cy+2)*TILE, state: 'idle', timer: 30, crop: 'carrot' });
+
+  // Camera centered on farm patch
+  AMBIENT.panX = window.innerWidth/2  - (cx * TILE + TILE/2) * camera.zoom;
+  AMBIENT.panY = window.innerHeight/2 - (cy * TILE + TILE/2) * camera.zoom;
+  AMBIENT.panTargetX = AMBIENT.panX;
+  AMBIENT.panTargetY = AMBIENT.panY;
+  camera.x = AMBIENT.panX;
+  camera.y = AMBIENT.panY;
+
+  // Schedule weather roll
+  AMBIENT.weatherTimer = 80 + Math.floor(Math.random() * 80);
+}
+
+function updateAmbient() {
+  AMBIENT.tick++;
+
+  // ─ Weather / time ─
+  AMBIENT.weatherTimer--;
+  if (AMBIENT.weatherTimer <= 0) {
+    const roll = Math.random();
+    AMBIENT.weather = roll < 0.45 ? 'sunny' : roll < 0.70 ? 'overcast' : roll < 0.90 ? 'rain' : 'hail';
+    AMBIENT.weatherTimer = 80 + Math.floor(Math.random() * 80);
+    isRaining = (AMBIENT.weather === 'rain' || AMBIENT.weather === 'hail');
+  }
+
+  // Accelerated time-of-day (drives sky tint in render)
+  tick = (tick + 5) % TPDAY;
+
+  // Gentle camera pan — drift toward a new target every ~10s
+  if (AMBIENT.tick % 600 === 0) {
+    const offsetX = (Math.random() - 0.5) * 4 * TILE * camera.zoom;
+    const offsetY = (Math.random() - 0.5) * 4 * TILE * camera.zoom;
+    AMBIENT.panTargetX = AMBIENT.panX + offsetX;
+    AMBIENT.panTargetY = AMBIENT.panY + offsetY;
+  }
+  camera.x += (AMBIENT.panTargetX - camera.x) * 0.005;
+  camera.y += (AMBIENT.panTargetY - camera.y) * 0.005;
+
+  // ─ Ambient particle weather ─
+  if (AMBIENT.weather === 'rain' || AMBIENT.weather === 'hail') {
+    const count = AMBIENT.weather === 'hail' ? 2 : 6;
+    for (let i = 0; i < count; i++) {
+      const sx = Math.random() * window.innerWidth;
+      const wx = (sx - camera.x) / camera.zoom;
+      const wy = (-10 - camera.y) / camera.zoom;
+      particles.push({
+        x: wx, y: wy,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: 2 + Math.random(),
+        life: 1,
+        color: AMBIENT.weather === 'hail' ? '#aaddff' : '#6699cc',
+        size: AMBIENT.weather === 'hail' ? 3 : 2,
+      });
+    }
+  }
+
+  // ─ Slowly advance crop growth ─
+  if (AMBIENT.tick % 120 === 0) {
+    for (let ty = 0; ty < WH; ty++) {
+      for (let tx = 0; tx < WW; tx++) {
+        const tile = world[ty][tx];
+        if (!tile.crop) continue;
+        const cfg = S.crops[tile.crop.type];
+        if (!cfg) continue;
+        if (tile.crop.stage < cfg.stages - 1) tile.crop.stage++;
+      }
+    }
+  }
+
+  // ─ Ambient bots ─
+  for (const bot of AMBIENT_BOTS) {
+    _updateAmbientBot(bot);
+  }
+
+  updateParticles();
+}
+
+function _updateAmbientBot(bot) {
+  bot.timer--;
+  if (bot.timer > 0) return;
+
+  switch (bot.state) {
+    case 'idle': {
+      const target = _ambientFindTarget(bot);
+      if (target) {
+        bot.targetTx = target.tx; bot.targetTy = target.ty; bot.targetAction = target.action;
+        bot.state = 'moving'; bot.timer = 1;
+      } else {
+        bot.timer = 20;
+      }
+      break;
+    }
+    case 'moving': {
+      const dx = bot.targetTx - bot.tx, dy = bot.targetTy - bot.ty;
+      if (dx === 0 && dy === 0) { bot.state = 'acting'; bot.timer = 8; break; }
+      if (Math.abs(dx) >= Math.abs(dy)) bot.tx += Math.sign(dx);
+      else bot.ty += Math.sign(dy);
+      bot.px = bot.tx * TILE; bot.py = bot.ty * TILE;
+      bot.timer = 6;
+      break;
+    }
+    case 'acting': {
+      const tx = bot.targetTx, ty = bot.targetTy;
+      if (!inBounds(tx, ty)) { bot.state = 'idle'; bot.timer = 5; break; }
+      const tile = world[ty][tx];
+      switch (bot.targetAction) {
+        case 'harvest':
+          tile.crop = null;
+          break;
+        case 'water':
+          if (tile.crop) { tile.crop.watered = true; tile.watered = true; }
+          break;
+        case 'plant':
+          if (tile.type === 'tilled' && !tile.crop) {
+            tile.crop = { type: bot.crop, stage: 0, watered: false };
+          }
+          break;
+        case 'till':
+          if (tile.type === 'grass' || tile.type === 'flower') tile.type = 'tilled';
+          break;
+      }
+      bot.state = 'idle'; bot.timer = 10;
+      break;
+    }
+  }
+}
+
+function _ambientFindTarget(bot) {
+  const radius = 8;
+  let best = null, bestDist = Infinity;
+  const priority = { harvest: 0, water: 1, plant: 2, till: 3 };
+
+  for (let dy = -radius; dy <= radius; dy++) {
+    for (let dx = -radius; dx <= radius; dx++) {
+      const tx = bot.tx + dx, ty = bot.ty + dy;
+      if (!inBounds(tx, ty)) continue;
+      const tile = world[ty][tx];
+      let action = null;
+
+      const cfg = tile.crop && S.crops[tile.crop.type];
+      if (tile.crop && cfg && tile.crop.stage >= cfg.stages - 1) action = 'harvest';
+      else if (tile.crop && !tile.crop.watered) action = 'water';
+      else if (tile.type === 'tilled' && !tile.crop) action = 'plant';
+      else if ((tile.type === 'grass' || tile.type === 'flower') && Math.random() < 0.02) action = 'till';
+
+      if (!action) continue;
+      const dist = Math.abs(dx) + Math.abs(dy);
+      if (priority[action] < (best ? priority[best.action] : 99) ||
+         (priority[action] === (best ? priority[best.action] : 99) && dist < bestDist)) {
+        best = { tx, ty, action }; bestDist = dist;
+      }
+    }
+  }
+  return best;
+}
+
 /* ─── Escape key ─── */
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
