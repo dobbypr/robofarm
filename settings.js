@@ -106,30 +106,38 @@ const SETTINGS = {
   // Add your own robot type and pair it with a behavior below!
   // ═══════════════════════════════════════════════════════════════════════
   robots: {
+    // ─── Three built-in types ────────────────────────────────────────
+    rust: {
+      name: 'Rustbot',   cost: 100,  speed: 1.8,
+      hexColor: '#b87a3a',
+      batteryMax: 60, batteryDrain: 0.04, chargeRate: 3,
+      defaultRadius: 5, invCapacity: 12, invSlots: 2,
+      canScavenge: true,   // eats nearby ready crops for fuel — never fully dies
+      description: 'Cheap and immortal. Scavenges crops for fuel. Slower and eats your harvest!',
+    },
     basic: {
-      name: 'Farm Bot',   cost: 250,  speed: 2.5,
-      hexColor: '#c0c0c0',
-      tasks: ['till', 'plant', 'water', 'harvest'],
-      description: 'Your trusty starter. Slow but does everything.',
+      name: 'Farm Bot',  cost: 250,  speed: 2.5,
+      hexColor: '#a8b8c8',
+      batteryMax: 100, batteryDrain: 0.05, chargeRate: 7,
+      defaultRadius: 8, invCapacity: 32, invSlots: 3,
+      canScavenge: false,
+      description: 'Your trusty all-rounder. Does everything reliably.',
     },
-    speedy: {
-      name: 'Zippy Bot',  cost: 600,  speed: 5.0,
-      hexColor: '#ffd700',
-      tasks: ['plant', 'water', 'harvest'],
-      description: 'Blazing fast, can\'t till. Pre-till your fields first!',
-    },
-    harvester: {
-      name: 'Reaper Bot', cost: 1000, speed: 3.5,
-      hexColor: '#ff6600',
-      tasks: ['harvest'],
-      description: 'Harvest specialist. Ruthlessly efficient at collecting crops.',
+    pro: {
+      name: 'ProBot',    cost: 600,  speed: 4.0,
+      hexColor: '#5090d0',
+      batteryMax: 150, batteryDrain: 0.035, chargeRate: 12,
+      defaultRadius: 14, invCapacity: 64, invSlots: 5,
+      canScavenge: false,
+      description: 'Large area, fast, massive storage. The premium choice.',
     },
     // ─── Custom robot example — uncomment! ────────────────────────────
     // titan: {
-    //   name: 'Titan Bot', cost: 3000, speed: 1.5,
-    //   hexColor: '#aa00ff',
-    //   tasks: ['till', 'plant', 'water', 'harvest'],
-    //   description: 'Slow but unstoppable behemoth.',
+    //   name: 'Titan Bot', cost: 3000, speed: 1.5, hexColor: '#aa00ff',
+    //   batteryMax: 200, batteryDrain: 0.03, chargeRate: 5,
+    //   defaultRadius: 6, invCapacity: 128, invSlots: 4,
+    //   canScavenge: false,
+    //   description: 'Slow but unstoppable. Enormous storage capacity.',
     // },
   },
 
