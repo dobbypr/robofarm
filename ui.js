@@ -356,7 +356,7 @@ function deleteSelectedRobot() {
   if (idx === -1) return;
   const bot = robots[idx];
   if (!confirm(`Remove ${bot.name}? It will be returned to your inventory.`)) return;
-  robotsOwned++; robots.splice(idx, 1);
+  robotsOwned[bot.type] = (robotsOwned[bot.type] || 0) + 1; robots.splice(idx, 1);
   configRobotId = null; selectedRobotId = null;
   document.getElementById('robot-config-panel').classList.remove('visible');
   notify(`🤖 ${bot.name} returned to inventory.`);

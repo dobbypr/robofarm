@@ -145,173 +145,113 @@ const SETTINGS = {
   // ROBOT BEHAVIORS  ⚙️  ←  THE CODING SANDBOX
   // ═══════════════════════════════════════════════════════════════════════
   //
-  // Each behavior is a function that runs on a timer for your robot.
+  // Each behavior is a function(robot, api) that runs on a timer.
   // Select it from the robot's dropdown in the 🤖 Bots panel.
   //
   // ────────────────────────────────────────────────────────────────────
-  // ACTIONS API  — everything your robot can do
+  // API  — everything your robot can do
   // ────────────────────────────────────────────────────────────────────
-  //   actions.moveTo(x, y)               Move one BFS step toward tile
-  //   actions.isAdjacent(x, y)           True if within 1.5 tiles
-  //   actions.till(x, y)                 Hoe GRASS into SOIL_DRY
-  //   actions.plant(x, y, 'cropKey')     Plant a crop  (uses inventory seeds)
-  //   actions.water(x, y)                Water a planted tile
-  //   actions.harvest(x, y)              Collect a ready crop
+  //   api.pos(robot)                     → { x, y } tile position
+  //   api.moveTo(robot, x, y)            Walk toward tile (BFS)
+  //   api.till(robot, x, y)              Hoe grass/flower → tilled
+  //   api.plant(robot, x, y, 'crop')     Plant a seed (uses inventory)
+  //   api.water(robot, x, y)             Water a planted crop
+  //   api.harvest(robot, x, y)           Collect a ready crop
+  //   api.idle(robot)                    Stop and wait
+  //   api.mem(robot, key, val?)          Get/set persistent memory
+  //   api.inventory(robot)               → { seeds:{}, crops:{} }
+  //   api.nearby(robot, radius)          → array of nearby tile objects
+  //   api.distanceTo(robot, x, y)        → Manhattan distance
   //
-  //   actions.findNearest(type)          Scan ~25 tiles for nearest match:
-  //                                        'grass'   → tillable grass tile
-  //                                        'tilled'  → empty prepared soil
-  //                                        'thirsty' → unwatered planted crop
-  //                                        'ready'   → harvestable crop
-  //
-  //   actions.findNearestInArea(type, { x, y, w, h })
-  //                                      Same but bounded to a rectangle
+  //   api.findCrop(robot, filter)        → nearest crop tile | null
+  //     filter: { ready?, needsWater?, type?, maxDist?, cx?, cy? }
+  //   api.findTile(robot, filter)        → nearest tile | null
+  //     filter: { tileType?, empty?, maxDist?, cx?, cy? }
   //
   // ────────────────────────────────────────────────────────────────────
   // ROBOT STATE
   // ────────────────────────────────────────────────────────────────────
-  //   robot.x, robot.y        Current tile position (numbers)
-  //   robot.memory = {}       Your scratchpad! Persists between calls.
-  //                           Store your state machine, targets, counters.
-  //   robot.assignedCrop      Crop set via the UI dropdown ('wheat', etc.)
-  //
-  // ────────────────────────────────────────────────────────────────────
-  // WORLD QUERY
-  // ────────────────────────────────────────────────────────────────────
-  //   world[y][x].type        'GRASS' | 'SOIL_DRY' | 'SOIL_WET' |
-  //                           'WATER' | 'TREE' | 'FLOWER' | 'STONE'
-  //   world[y][x].crop        Planted crop key (string) or null
-  //   world[y][x].stage       Growth stage (0 = seeded, max-1 = ready)
-  //   world[y][x].watered     true if watered this day
+  //   robot.tileX, robot.tileY   Current tile position
+  //   robot.memory = {}          Scratchpad — persists between calls
+  //   robot.assignedCrop         Crop type set in the UI panel
+  //   robot.workArea             { x, y, radius } | null
+  //   robot.homeTileX/Y          Charging/drop-off tile
+  //   robot.invCapacity          Total item capacity
   //
   // ═══════════════════════════════════════════════════════════════════════
 
   robotBehaviors: {
 
     // ── idle ──────────────────────────────────────────────────────────
-    // Default. Waits for a click-assigned task from the UI.
-    idle: function(robot, world, actions) {},
+    // Does nothing. Useful as a placeholder.
+    idle: function(robot, api) {},
 
     // ── autoFarm ──────────────────────────────────────────────────────
     // Does EVERYTHING in priority order:
     //   harvest ready crops → water thirsty ones → plant on tilled soil → till grass
-    autoFarm: function(robot, world, actions) {
-      const mem = robot.memory;
-      if (!mem.state) mem.state = 'findWork';
-
-      if (mem.state === 'findWork') {
-        const ready   = actions.findNearest('ready');
-        if (ready)   { mem.target = ready;   mem.state = 'harvest'; return; }
-        const thirsty = actions.findNearest('thirsty');
-        if (thirsty) { mem.target = thirsty; mem.state = 'water';   return; }
-        const tilled  = actions.findNearest('tilled');
-        if (tilled)  { mem.target = tilled;  mem.state = 'plant';   return; }
-        const grass   = actions.findNearest('grass');
-        if (grass)   { mem.target = grass;   mem.state = 'till';    return; }
-        return;
-      }
-
-      if (mem.target) {
-        if (!actions.isAdjacent(mem.target.x, mem.target.y)) {
-          actions.moveTo(mem.target.x, mem.target.y);
-        } else {
-          if (mem.state === 'harvest') actions.harvest(mem.target.x, mem.target.y);
-          if (mem.state === 'water')   actions.water(mem.target.x, mem.target.y);
-          if (mem.state === 'plant')   actions.plant(mem.target.x, mem.target.y, robot.assignedCrop || 'wheat');
-          if (mem.state === 'till')    actions.till(mem.target.x, mem.target.y);
-          mem.state  = 'findWork';
-          mem.target = null;
-        }
-      }
+    autoFarm: function(robot, api) {
+      const held = Object.values(robot.inventory.crops).reduce((s, v) => s + v, 0);
+      if (held >= robot.invCapacity) { api.moveTo(robot, robot.homeTileX, robot.homeTileY); return; }
+      const max = robot.workArea?.radius || 12, cx = robot.workArea?.x, cy = robot.workArea?.y;
+      const ready = api.findCrop(robot, { ready: true, maxDist: max, cx, cy });
+      if (ready) { api.moveTo(robot, ready.x, ready.y); api.harvest(robot, ready.x, ready.y); return; }
+      const thirsty = api.findCrop(robot, { needsWater: true, maxDist: max, cx, cy });
+      if (thirsty) { api.moveTo(robot, thirsty.x, thirsty.y); api.water(robot, thirsty.x, thirsty.y); return; }
+      const crop = robot.assignedCrop || 'wheat';
+      const empty = api.findTile(robot, { tileType: 'tilled', empty: true, maxDist: max, cx, cy });
+      if (empty) { api.moveTo(robot, empty.x, empty.y); api.plant(robot, empty.x, empty.y, crop); return; }
+      const grass = api.findTile(robot, { tileType: 'grass', maxDist: max, cx, cy });
+      if (grass) { api.moveTo(robot, grass.x, grass.y); api.till(robot, grass.x, grass.y); return; }
+      api.idle(robot);
     },
 
     // ── harvester ─────────────────────────────────────────────────────
     // Only harvests. Laser-focused. Maximum crop collection.
-    harvester: function(robot, world, actions) {
-      const mem = robot.memory;
-      if (!mem.target) mem.target = actions.findNearest('ready');
-      if (!mem.target) return;
-      if (!actions.isAdjacent(mem.target.x, mem.target.y)) {
-        actions.moveTo(mem.target.x, mem.target.y);
-      } else {
-        actions.harvest(mem.target.x, mem.target.y);
-        mem.target = null;
-      }
+    harvester: function(robot, api) {
+      const held = Object.values(robot.inventory.crops).reduce((s, v) => s + v, 0);
+      if (held >= robot.invCapacity) { api.moveTo(robot, robot.homeTileX, robot.homeTileY); return; }
+      const t = api.findCrop(robot, { ready: true, maxDist: robot.workArea?.radius || 12, cx: robot.workArea?.x, cy: robot.workArea?.y });
+      if (t) { api.moveTo(robot, t.x, t.y); api.harvest(robot, t.x, t.y); } else api.idle(robot);
     },
 
     // ── planter ───────────────────────────────────────────────────────
     // Only plants and waters. Teams well with a 'harvester' bot!
-    planter: function(robot, world, actions) {
-      const mem = robot.memory;
-      if (!mem.state) mem.state = 'findWork';
-
-      if (mem.state === 'findWork') {
-        const thirsty = actions.findNearest('thirsty');
-        if (thirsty) { mem.target = thirsty; mem.state = 'water'; return; }
-        const tilled  = actions.findNearest('tilled');
-        if (tilled)  { mem.target = tilled;  mem.state = 'plant'; return; }
-        return;
-      }
-
-      if (mem.target) {
-        if (!actions.isAdjacent(mem.target.x, mem.target.y)) {
-          actions.moveTo(mem.target.x, mem.target.y);
-        } else {
-          if (mem.state === 'water') actions.water(mem.target.x, mem.target.y);
-          if (mem.state === 'plant') actions.plant(mem.target.x, mem.target.y, robot.assignedCrop || 'wheat');
-          mem.state  = 'findWork';
-          mem.target = null;
-        }
-      }
+    planter: function(robot, api) {
+      const max = robot.workArea?.radius || 12, cx = robot.workArea?.x, cy = robot.workArea?.y;
+      const thirsty = api.findCrop(robot, { needsWater: true, maxDist: max, cx, cy });
+      if (thirsty) { api.moveTo(robot, thirsty.x, thirsty.y); api.water(robot, thirsty.x, thirsty.y); return; }
+      const crop = robot.assignedCrop || 'wheat';
+      const empty = api.findTile(robot, { tileType: 'tilled', empty: true, maxDist: max, cx, cy });
+      if (empty) { api.moveTo(robot, empty.x, empty.y); api.plant(robot, empty.x, empty.y, crop); return; }
+      api.idle(robot);
     },
 
     // ── areaFarm ──────────────────────────────────────────────────────
-    // Like autoFarm but the bot STAYS within a home territory.
-    // The territory is a 16×14 tile zone centered where you deployed it.
-    areaFarm: function(robot, world, actions) {
-      const mem = robot.memory;
-      if (!mem.area)  mem.area  = { x: Math.floor(robot.x) - 8, y: Math.floor(robot.y) - 7, w: 16, h: 14 };
-      if (!mem.state) mem.state = 'findWork';
-
-      if (mem.state === 'findWork') {
-        const ready   = actions.findNearestInArea('ready',   mem.area);
-        if (ready)   { mem.target = ready;   mem.state = 'harvest'; return; }
-        const thirsty = actions.findNearestInArea('thirsty', mem.area);
-        if (thirsty) { mem.target = thirsty; mem.state = 'water';   return; }
-        const tilled  = actions.findNearestInArea('tilled',  mem.area);
-        if (tilled)  { mem.target = tilled;  mem.state = 'plant';   return; }
-        return;
-      }
-
-      if (mem.target) {
-        if (!actions.isAdjacent(mem.target.x, mem.target.y)) {
-          actions.moveTo(mem.target.x, mem.target.y);
-        } else {
-          if (mem.state === 'harvest') actions.harvest(mem.target.x, mem.target.y);
-          if (mem.state === 'water')   actions.water(mem.target.x, mem.target.y);
-          if (mem.state === 'plant')   actions.plant(mem.target.x, mem.target.y, robot.assignedCrop || 'wheat');
-          mem.state  = 'findWork';
-          mem.target = null;
-        }
-      }
+    // Like autoFarm but the bot STAYS within a home territory
+    // (8-tile radius from where it was first deployed).
+    areaFarm: function(robot, api) {
+      if (!api.mem(robot, 'homeX')) { api.mem(robot, 'homeX', robot.tileX); api.mem(robot, 'homeY', robot.tileY); }
+      const cx = api.mem(robot, 'homeX'), cy = api.mem(robot, 'homeY'), max = 8;
+      const held = Object.values(robot.inventory.crops).reduce((s, v) => s + v, 0);
+      if (held >= robot.invCapacity) { api.moveTo(robot, robot.homeTileX, robot.homeTileY); return; }
+      const ready = api.findCrop(robot, { ready: true, maxDist: max, cx, cy });
+      if (ready) { api.moveTo(robot, ready.x, ready.y); api.harvest(robot, ready.x, ready.y); return; }
+      const thirsty = api.findCrop(robot, { needsWater: true, maxDist: max, cx, cy });
+      if (thirsty) { api.moveTo(robot, thirsty.x, thirsty.y); api.water(robot, thirsty.x, thirsty.y); return; }
+      const crop = robot.assignedCrop || 'wheat';
+      const empty = api.findTile(robot, { tileType: 'tilled', empty: true, maxDist: max, cx, cy });
+      if (empty) { api.moveTo(robot, empty.x, empty.y); api.plant(robot, empty.x, empty.y, crop); return; }
+      api.idle(robot);
     },
 
     // ─── Your custom behavior ─────────────────────────────────────────
-    // myBehavior: function(robot, world, actions) {
-    //   const mem = robot.memory;
-    //   if (!mem.home) mem.home = { x: robot.x, y: robot.y };
-    //
-    //   const thirsty = actions.findNearest('thirsty');
+    // myBehavior: function(robot, api) {
+    //   const thirsty = api.findCrop(robot, { needsWater: true, maxDist: 10 });
     //   if (thirsty) {
-    //     if (!actions.isAdjacent(thirsty.x, thirsty.y)) {
-    //       actions.moveTo(thirsty.x, thirsty.y);
-    //     } else {
-    //       actions.water(thirsty.x, thirsty.y);
-    //     }
+    //     api.moveTo(robot, thirsty.x, thirsty.y);
+    //     api.water(robot, thirsty.x, thirsty.y);
     //   } else {
-    //     if (!actions.isAdjacent(mem.home.x, mem.home.y)) {
-    //       actions.moveTo(mem.home.x, mem.home.y);
-    //     }
+    //     api.idle(robot);
     //   }
     // },
   },

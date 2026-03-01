@@ -79,6 +79,10 @@ function checkMilestones() {
     milestones.coins1000 = true;
     showMilestone('1000 COINS!', 'Look at that bank account grow. 💰');
   }
+  if (!milestones.crops500 && totalCrops >= 500) {
+    milestones.crops500 = true;
+    showMilestone('500 CROPS!', 'A farming empire in the making. The bots are proud! 🤖🌾');
+  }
 }
 
 function showMilestone(title, sub) {
@@ -128,10 +132,12 @@ if (!loaded) {
   }
 }
 
-// Place starter robots if any
-for (let i = 0; i < S.player.startRobots; i++) {
-  const bot = new Robot(S.player.startX + 2 + i, S.player.startY + 2);
-  robots.push(bot);
+// Place starter robots if any (only on a fresh game, not on load)
+if (!loaded) {
+  for (let i = 0; i < S.player.startRobots; i++) {
+    const bot = new Robot(S.player.startX + 2 + i, S.player.startY + 2);
+    robots.push(bot);
+  }
 }
 
 // Camera init
