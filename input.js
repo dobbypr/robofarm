@@ -6,6 +6,14 @@ let mouseWorld = { x: 0, y: 0 };
 let mouseScreen = { x: 0, y: 0 };
 
 document.addEventListener('keydown', e => {
+  if (e.defaultPrevented) return;
+  if (typeof isMenuVisible === 'function' && isMenuVisible()) {
+    if (e.code === 'Escape' && typeof menuHandleEscape === 'function') {
+      e.preventDefault();
+      menuHandleEscape();
+    }
+    return;
+  }
   keys[e.code] = true;
   if (e.code === 'Digit1') selectTool('hand');
   else if (e.code === 'Digit2') selectTool('hoe');
@@ -20,7 +28,20 @@ document.addEventListener('keydown', e => {
   else if (e.code === 'KeyR') openModal('robots');
   else if (e.code === 'KeyF') openModal('docs');
   else if (e.code === 'KeyI') openModal('inventory');
-  else if (e.code === 'Escape') { closeAllModals(); cancelAssign(); }
+  else if (e.code === 'Escape') {
+    const gazetteEl = document.getElementById('gazette-overlay');
+    if (gazetteEl && !gazetteEl.classList.contains('hidden')) {
+      if (typeof closeGazette === 'function') closeGazette();
+    } else {
+      const hasOpenModal = !!document.querySelector('.modal-overlay:not(.hidden)');
+      if (hasOpenModal) {
+        closeAllModals();
+        cancelAssign();
+      } else if (typeof menuHandleEscape === 'function') {
+        menuHandleEscape();
+      }
+    }
+  }
 });
 document.addEventListener('keyup', e => { keys[e.code] = false; });
 

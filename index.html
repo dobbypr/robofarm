@@ -26,9 +26,9 @@
     <div class="menu-tagline">automate your harvest</div>
     <div class="menu-buttons">
       <button class="menu-btn primary" id="menu-btn-continue" onclick="menuContinue()">▶&nbsp; CONTINUE</button>
-      <button class="menu-btn" onclick="menuShowView('new-game')">NEW GAME</button>
-      <button class="menu-btn" onclick="menuShowView('settings')">SETTINGS</button>
-      <button class="menu-btn danger" onclick="menuQuit()">QUIT</button>
+      <button class="menu-btn" id="menu-btn-new-game" onclick="menuShowView('new-game')">NEW GAME</button>
+      <button class="menu-btn" id="menu-btn-settings" onclick="menuShowView('settings')">SETTINGS</button>
+      <button class="menu-btn danger" id="menu-btn-quit" onclick="menuQuit()">QUIT</button>
     </div>
     <div class="menu-version" id="menu-version-label">v0.2.2</div>
   </div>
@@ -54,13 +54,14 @@
     <div class="menu-confirm-note">This cannot be undone.</div>
     <div class="menu-buttons">
       <button class="menu-btn danger" id="menu-confirm-ok">OVERWRITE</button>
-      <button class="menu-btn" onclick="menuShowView('new-game')">CANCEL</button>
+      <button class="menu-btn" onclick="menuCancelOverwrite()">CANCEL</button>
     </div>
   </div>
 
   <!-- Settings -->
   <div id="menu-settings" class="menu-view">
     <div class="menu-sub-title">SETTINGS</div>
+    <div class="menu-settings-hint" id="menu-settings-dirty-hint"></div>
     <div class="modal-tabs" style="margin-bottom:14px">
       <button class="tab-btn active" onclick="menuSettingsTab('display')">Display</button>
       <button class="tab-btn" onclick="menuSettingsTab('sound')">Sound</button>
@@ -70,6 +71,18 @@
     <div id="menu-settings-sound" class="menu-settings-tab" style="display:none"></div>
     <div id="menu-settings-keybinds" class="menu-settings-tab" style="display:none"></div>
     <button class="menu-btn back-btn" onclick="menuShowView('main')">◀ BACK</button>
+  </div>
+
+  <!-- Settings save prompt -->
+  <div id="menu-settings-confirm" class="menu-view">
+    <div class="menu-sub-title" style="color:var(--gold)">SAVE SETTINGS?</div>
+    <div class="menu-confirm-msg" id="menu-settings-confirm-msg"></div>
+    <div class="menu-confirm-note">Choose what to do with your unsaved changes.</div>
+    <div class="menu-buttons">
+      <button class="menu-btn primary" onclick="menuSettingsPromptAction('save')">SAVE</button>
+      <button class="menu-btn" onclick="menuSettingsPromptAction('discard')">DISCARD</button>
+      <button class="menu-btn" onclick="menuSettingsPromptAction('cancel')">CANCEL</button>
+    </div>
   </div>
 
   <!-- Quit -->
@@ -88,6 +101,7 @@
   <div class="stat-block" id="stat-season-block">🌸 <span id="stat-season" class="val">Spring</span></div>
   <div class="stat-block">⏰ <span id="stat-time" class="val">Morning</span></div>
   <div id="topbar-right">
+    <button class="top-btn" onclick="openMenu()" title="Menu / Pause [Esc]">☰ Menu</button>
     <button class="top-btn" onclick="openModal('shop')">🏪 Shop</button>
     <button class="top-btn" onclick="openModal('robots')">🤖 Robots</button>
     <button class="top-btn" onclick="openModal('docs')">📖 Docs</button>
@@ -754,10 +768,22 @@ if (t) {
     </div>
     <div class="inv-section-label">YOUR BAG <span id="inv-slot-count"></span></div>
     <div class="inv-grid" id="inv-player-grid"></div>
-    <div class="inv-section-label" style="margin-top:12px">ROBOTS <span>click slot to select · then GIVE to send · COLLECT to retrieve</span></div>
+    <div class="inv-section-label" style="margin-top:12px">ROBOTS <span>drag bag slot or hotbar seed onto a robot to GIVE · drag robot slot into YOUR BAG to collect</span></div>
     <div id="inv-robots-list"></div>
   </div>
 </div>
+</div>
+
+<!-- GAZETTE OVERLAY -->
+<div id="gazette-overlay" class="hidden" onclick="if(event.target===this)closeGazette()">
+  <div id="gazette-card">
+    <div id="gazette-masthead">📰 THE ROBO FARM GAZETTE</div>
+    <div id="gazette-dateline">Day <span id="gazette-day"></span> &nbsp;·&nbsp; <span id="gazette-season"></span> &nbsp;·&nbsp; <span id="gazette-weather"></span></div>
+    <div id="gazette-body"></div>
+    <div id="gazette-footer">
+      <button id="gazette-continue" onclick="closeGazette()">Continue ▸</button>
+    </div>
+  </div>
 </div>
 
 <script src="rng.js"></script>
@@ -770,6 +796,7 @@ if (t) {
 <script src="saveload.js"></script>
 <script src="render.js"></script>
 <script src="loop.js"></script>
+<script src="gazette.js"></script>
 <script src="ui.js"></script>
 <script src="menu.js"></script>
 <script src="sandbox.js"></script>
