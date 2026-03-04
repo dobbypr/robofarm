@@ -99,8 +99,24 @@ function openFilesModal() {
 /* ═══════════════════════════════════════════════════════════════════════════
  * MAIN GAME LOOP
  * ═══════════════════════════════════════════════════════════════════════════ */
-function loop() {
-  update();
+const _SIM_STEP_MS = 1000 / 60;
+const _MAX_SIM_STEPS = 3;
+let _simAccumulator = 0;
+let _lastFrameTime = performance.now();
+
+function loop(now = performance.now()) {
+  const dt = Math.min(120, Math.max(0, now - _lastFrameTime));
+  _lastFrameTime = now;
+  _simAccumulator += dt;
+
+  let steps = 0;
+  while (_simAccumulator >= _SIM_STEP_MS && steps < _MAX_SIM_STEPS) {
+    update();
+    _simAccumulator -= _SIM_STEP_MS;
+    steps++;
+  }
+  if (steps === _MAX_SIM_STEPS) _simAccumulator = 0;
+
   render();
   requestAnimationFrame(loop);
 }
@@ -112,7 +128,7 @@ window.addEventListener('resize', resize);
 resize();
 initAmbient();   // menu.js: generates world, seeds bots, migrates old save
 openMenu();      // menu.js: shows the title screen
-loop();
+requestAnimationFrame(loop);
 
 /* Click outside modals to close */
 document.querySelectorAll('.modal-overlay').forEach(overlay => {

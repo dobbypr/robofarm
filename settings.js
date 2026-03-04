@@ -42,6 +42,15 @@ const SETTINGS = {
     startHour:     6,         // Clock starts at 6am
     seasons:       ['Spring 🌸', 'Summer ☀️', 'Autumn 🍂', 'Winter ❄️'],
     daysPerSeason: 28,        // Season length in days
+    // Crop growth pacing:
+    // cropGrowthMultiplier > 1 makes all crops mature faster than listed growDays.
+    // dryGrowthRate keeps some progress even when you miss watering (0..1).
+    // growthTickInterval controls how often growth updates (in game ticks).
+    // cropGrowthTileBudget limits how many world tiles are processed per frame for growth.
+    cropGrowthMultiplier: 1.35,
+    dryGrowthRate: 0.45,
+    growthTickInterval: 20,
+    cropGrowthTileBudget: 1200,
   },
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -328,6 +337,13 @@ const SETTINGS = {
   },
 
   // ═══════════════════════════════════════════════════════════════════════
+  // DISPLAY / PERFORMANCE
+  // ═══════════════════════════════════════════════════════════════════════
+  display: {
+    uiUpdateIntervalTicks: 4,
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
   // KEYBINDINGS
   // ═══════════════════════════════════════════════════════════════════════
   keybindings: {
@@ -371,6 +387,14 @@ const SETTINGS = {
 
   if (s.time.ticksPerDay == null) s.time.ticksPerDay = Math.max(1200, Math.round((s.time.dayLengthMs ?? 180000) / (1000 / 60)));
   if (s.time.seasonLength == null) s.time.seasonLength = s.time.daysPerSeason ?? 28;
+  if (s.time.cropGrowthMultiplier == null) s.time.cropGrowthMultiplier = 1.35;
+  if (s.time.dryGrowthRate == null) s.time.dryGrowthRate = 0.45;
+  if (s.time.growthTickInterval == null) s.time.growthTickInterval = 20;
+  if (s.time.cropGrowthTileBudget == null) s.time.cropGrowthTileBudget = 1200;
+  s.time.cropGrowthMultiplier = Math.max(0.25, s.time.cropGrowthMultiplier);
+  s.time.dryGrowthRate = Math.max(0, Math.min(1, s.time.dryGrowthRate));
+  s.time.growthTickInterval = Math.max(5, Math.floor(s.time.growthTickInterval));
+  s.time.cropGrowthTileBudget = Math.max(160, Math.floor(Number(s.time.cropGrowthTileBudget) || 1200));
   if (!Array.isArray(s.time.seasons) || s.time.seasons.length === 0) s.time.seasons = ['Spring', 'Summer', 'Autumn', 'Winter'];
   s.time.seasons = s.time.seasons.map(name => {
     const m = String(name).match(/[A-Za-z]+/);
@@ -386,6 +410,8 @@ const SETTINGS = {
   if (s.display.showNotifications == null) s.display.showNotifications = true;
   if (s.display.notificationDuration == null) s.display.notificationDuration = 2600;
   if (!s.display.particleCount) s.display.particleCount = s.ui.particleEffects === false ? 'low' : 'medium';
+  if (s.display.uiUpdateIntervalTicks == null) s.display.uiUpdateIntervalTicks = 4;
+  s.display.uiUpdateIntervalTicks = Math.max(1, Math.floor(Number(s.display.uiUpdateIntervalTicks) || 4));
 
   const robotBase = s.robots.basic || {};
   if (s.robots.speed == null) s.robots.speed = robotBase.speed ?? 2.5;

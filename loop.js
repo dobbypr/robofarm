@@ -77,6 +77,6 @@ function update() {
   updateCrops();
   updateRobots();
   updateParticles();
-  updateUI();
+  updateUI(false);
   animTime++;
 }

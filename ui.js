@@ -1,26 +1,89 @@
 /* ═══════════════════════════════════════════════════════════════════════════
  * UI
  * ═══════════════════════════════════════════════════════════════════════════ */
-function updateUI() {
-  document.getElementById('stat-coins').textContent = coins;
-  document.getElementById('stat-day').textContent = day;
-  document.getElementById('stat-season').textContent = SEASONS[season % SEASONS.length];
-  const dp = tick / TPDAY;
-  const timeName = dp < 0.2 ? '🌄 Dawn' : dp < 0.5 ? '☀️ Day' : dp < 0.7 ? '🌇 Dusk' : '🌙 Night';
-  document.getElementById('stat-time').textContent = timeName;
+const _UI_UPDATE_INTERVAL = Math.max(1, Math.floor(Number(S.display?.uiUpdateIntervalTicks) || 4));
+const _UI_STATE = {
+  lastTick: -1,
+  lastSig: '',
+  refs: null,
+  seedRefs: {},
+  robotLabelRef: null,
+};
 
-  for (const type of ['wheat','carrot','corn','sunflower','potato']) {
-    const el = document.getElementById(`cnt-${type}`);
+function _uiRefs() {
+  if (_UI_STATE.refs) return _UI_STATE.refs;
+  _UI_STATE.refs = {
+    coins: document.getElementById('stat-coins'),
+    day: document.getElementById('stat-day'),
+    season: document.getElementById('stat-season'),
+    time: document.getElementById('stat-time'),
+  };
+  return _UI_STATE.refs;
+}
+
+function _uiRefreshRefs() {
+  const seedTypes = ['wheat', 'carrot', 'corn', 'sunflower', 'potato'];
+  const nextSeedRefs = {};
+  for (const type of seedTypes) {
+    nextSeedRefs[type] = document.getElementById(`cnt-${type}`);
+  }
+  _UI_STATE.seedRefs = nextSeedRefs;
+  _UI_STATE.robotLabelRef = document.querySelector('[data-tool="robot_place"] .lbl');
+}
+
+function _uiTimeBucket() {
+  const dp = tick / TPDAY;
+  if (dp < 0.2) return 0;
+  if (dp < 0.5) return 1;
+  if (dp < 0.7) return 2;
+  return 3;
+}
+
+function _uiTimeLabel(bucket) {
+  return bucket === 0 ? '🌄 Dawn' : bucket === 1 ? '☀️ Day' : bucket === 2 ? '🌇 Dusk' : '🌙 Night';
+}
+
+function _uiSignature() {
+  const seedTypes = ['wheat', 'carrot', 'corn', 'sunflower', 'potato'];
+  let sig = `${coins}|${day}|${season}|${_uiTimeBucket()}|${rainDay ? 1 : 0}|${pendingRobotType || 'basic'}`;
+  for (const type of seedTypes) sig += `|${inventory.seeds[type] || 0}`;
+  return sig;
+}
+
+function updateUI(force = true) {
+  const frameTick = (typeof playtime === 'number') ? playtime : animTime;
+  if (!force && frameTick - _UI_STATE.lastTick < _UI_UPDATE_INTERVAL) return;
+
+  const sig = _uiSignature();
+  if (!force && sig === _UI_STATE.lastSig) {
+    _UI_STATE.lastTick = frameTick;
+    return;
+  }
+
+  const refs = _uiRefs();
+  _UI_STATE.lastSig = sig;
+  _UI_STATE.lastTick = frameTick;
+
+  if (refs.coins) refs.coins.textContent = coins;
+  if (refs.day) refs.day.textContent = day;
+  if (refs.season) refs.season.textContent = SEASONS[season % SEASONS.length];
+  if (refs.time) refs.time.textContent = _uiTimeLabel(_uiTimeBucket());
+
+  if (!_UI_STATE.robotLabelRef || Object.keys(_UI_STATE.seedRefs).length === 0) _uiRefreshRefs();
+  for (const type of ['wheat', 'carrot', 'corn', 'sunflower', 'potato']) {
+    const el = _UI_STATE.seedRefs[type];
     if (el) el.textContent = inventory.seeds[type] || '';
   }
   // Update robot hotbar slot to show pending type
-  const rbSlot = document.querySelector('[data-tool="robot_place"] .lbl');
+  const rbSlot = _UI_STATE.robotLabelRef;
   if (rbSlot) {
     const _rtd = ROBOT_TYPES[pendingRobotType] || ROBOT_TYPES.basic;
     rbSlot.textContent = _rtd.name.split(' ')[0];
   }
   checkMilestones();
 }
+
+window.requestUIUpdate = () => updateUI(true);
 
 function selectTool(tool) {
   currentTool = tool;
