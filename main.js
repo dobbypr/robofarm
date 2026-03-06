@@ -1,8 +1,11 @@
 /* ═══════════════════════════════════════════════════════════════════════════
  * DRAG-TO-USE TOOLS  (QoL — hold mouse to apply tool to multiple tiles)
  * ═══════════════════════════════════════════════════════════════════════════ */
+const _mainGetEl = window.RF_UTIL?.getEl || (id => document.getElementById(id));
+
 let mouseIsDown = false;
 let lastDragTile = { x: -1, y: -1 };
+let _milestoneHideTimer = 0;
 
 canvas.addEventListener('mousedown', e => {
   mouseIsDown = true;
@@ -18,7 +21,7 @@ canvas.addEventListener('mousemove', e => {
   lastDragTile = { x: tx, y: ty };
   // Only drag-apply for till, water, and seeds (not hand or robot_place)
   if (currentTool === 'hoe' || currentTool === 'water' || S.crops[currentTool]) {
-    if (inBounds(tx, ty)) handleTileClick(tx, ty, {});
+    if (inBounds(tx, ty)) handleTileClick(tx, ty, { silent: true });
   }
 });
 
@@ -26,7 +29,8 @@ canvas.addEventListener('mousemove', e => {
  * CROP HOVER TOOLTIP  (QoL — hover to see crop info)
  * ═══════════════════════════════════════════════════════════════════════════ */
 function updateCropTooltip(mx, my) {
-  const tooltip = document.getElementById('crop-tooltip');
+  const tooltip = _mainGetEl('crop-tooltip');
+  if (!tooltip) return;
   const tx = Math.floor(mouseWorld.x / TILE);
   const ty = Math.floor(mouseWorld.y / TILE);
 
@@ -38,15 +42,22 @@ function updateCropTooltip(mx, my) {
   const cfg = S.crops[crop.type];
   if (!cfg) { tooltip.style.display = 'none'; return; }
 
-  const isReady = crop.stage >= cfg.stages - 1;
-  const stagePct = (crop.stage / (cfg.stages - 1)) * 100;
-  const waterPct = Math.min(100, (crop.waterCount / cfg.waterNeeded) * 100);
+  const stageMax = Math.max(1, cfg.stages - 1);
+  const stage = Math.max(0, Math.min(stageMax, Math.floor(Number(crop.stage) || 0)));
+  const isReady = stage >= stageMax;
+  const stagePct = (stage / stageMax) * 100;
+  const waterNeed = Math.max(1, Math.floor(Number(cfg.waterNeeded) || 1));
+  const waterCount = Math.max(0, Math.floor(Number(crop.waterCount) || 0));
 
-  document.getElementById('ct-name').textContent = `${cfg.emoji} ${crop.type.toUpperCase()}`;
-  document.getElementById('ct-stage').innerHTML =
-    `Stage ${crop.stage + 1}/${cfg.stages}  ·  💧 ${crop.waterCount}/${cfg.waterNeeded}`;
-  document.getElementById('ct-fill').style.width = stagePct + '%';
-  const readyEl = document.getElementById('ct-ready');
+  const nameEl = _mainGetEl('ct-name');
+  const stageEl = _mainGetEl('ct-stage');
+  const fillEl = _mainGetEl('ct-fill');
+  const readyEl = _mainGetEl('ct-ready');
+  if (!nameEl || !stageEl || !fillEl || !readyEl) return;
+
+  nameEl.textContent = `${cfg.emoji} ${crop.type.toUpperCase()}`;
+  stageEl.innerHTML = `Stage ${stage + 1}/${Math.max(1, cfg.stages)}  ·  💧 Today ${waterCount}/${waterNeed}`;
+  fillEl.style.width = stagePct + '%';
   readyEl.style.display = isReady ? 'block' : 'none';
 
   const pad = 12;
@@ -61,9 +72,13 @@ function updateCropTooltip(mx, my) {
 let milestones = { firstHarvest: false, firstRobot: false, crops100: false, coins1000: false, crops500: false };
 
 function checkMilestones() {
-  const totalCrops = Object.values(inventory.crops).reduce((a, b) => a + b, 0);
+  const metrics = progressionState?.metrics || {};
+  const totalHarvests = Math.max(0,
+    Math.floor(Number(metrics.manualHarvests) || 0)
+    + Math.floor(Number(metrics.robotHarvests) || 0)
+  );
 
-  if (!milestones.firstHarvest && totalCrops > 0) {
+  if (!milestones.firstHarvest && totalHarvests > 0) {
     milestones.firstHarvest = true;
     showMilestone('FIRST HARVEST!', 'You grew something. That\'s real. That\'s yours. 🌾');
   }
@@ -71,7 +86,7 @@ function checkMilestones() {
     milestones.firstRobot = true;
     showMilestone('FIRST ROBOT!', 'Your farm will never sleep again. 🤖');
   }
-  if (!milestones.crops100 && totalCrops >= 100) {
+  if (!milestones.crops100 && totalHarvests >= 100) {
     milestones.crops100 = true;
     showMilestone('100 CROPS!', 'A proper operation is taking shape. Keep going!');
   }
@@ -79,20 +94,35 @@ function checkMilestones() {
     milestones.coins1000 = true;
     showMilestone('1000 COINS!', 'Look at that bank account grow. 💰');
   }
+  if (!milestones.crops500 && totalHarvests >= 500) {
+    milestones.crops500 = true;
+    showMilestone('500 CROPS!', 'A sprawling operation. The land is yours. 🌾🌾🌾');
+  }
 }
 
 function showMilestone(title, sub) {
-  document.getElementById('milestone-text').textContent = title;
-  document.getElementById('milestone-sub').textContent = sub;
-  const el = document.getElementById('milestone-banner');
+  const textEl = _mainGetEl('milestone-text');
+  const subEl = _mainGetEl('milestone-sub');
+  const el = _mainGetEl('milestone-banner');
+  if (!textEl || !subEl || !el) return;
+  textEl.textContent = title;
+  subEl.textContent = sub;
   el.style.opacity = '1';
-  setTimeout(() => el.style.opacity = '0', 3200);
+  if (_milestoneHideTimer) clearTimeout(_milestoneHideTimer);
+  _milestoneHideTimer = setTimeout(() => {
+    el.style.opacity = '0';
+    _milestoneHideTimer = 0;
+  }, 3200);
 }
 
 /* ─── FILES MODAL helper ─── */
 function openFilesModal() {
-  const info = document.getElementById('files-farm-info');
-  const cropCount = world.flat().filter(t => t.crop).length;
+  const info = _mainGetEl('files-farm-info');
+  if (!info) return;
+  let cropCount = 0;
+  for (let y = 0; y < WH; y++) {
+    for (let x = 0; x < WW; x++) if (world[y][x]?.crop) cropCount++;
+  }
   info.textContent = `Day ${day}  ·  ${SEASONS[season % SEASONS.length]}  ·  ${coins} coins  ·  ${robots.length} robots  ·  ${cropCount} crops planted`;
 }
 
@@ -108,6 +138,8 @@ function loop(now = performance.now()) {
   const dt = Math.min(120, Math.max(0, now - _lastFrameTime));
   _lastFrameTime = now;
   _simAccumulator += dt;
+  const maxAccumulatedTime = _SIM_STEP_MS * _MAX_SIM_STEPS;
+  if (_simAccumulator > maxAccumulatedTime) _simAccumulator = maxAccumulatedTime;
 
   let steps = 0;
   while (_simAccumulator >= _SIM_STEP_MS && steps < _MAX_SIM_STEPS) {
@@ -115,7 +147,6 @@ function loop(now = performance.now()) {
     _simAccumulator -= _SIM_STEP_MS;
     steps++;
   }
-  if (steps === _MAX_SIM_STEPS) _simAccumulator = 0;
 
   render();
   requestAnimationFrame(loop);
@@ -132,7 +163,7 @@ requestAnimationFrame(loop);
 
 /* Click outside modals to close */
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', function(e) {
+  overlay.addEventListener('click', function (e) {
     if (e.target === this) { this.classList.add('hidden'); syncCursorMode(); }
   });
 });

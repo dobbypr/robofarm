@@ -1,69 +1,112 @@
 /* ═══════════════════════════════════════════════════════════════════════════
  * TILE CLICK HANDLER
  * ═══════════════════════════════════════════════════════════════════════════ */
+const _economyGetRobotById = window.RF_UTIL?.getRobotById || ((id, list) => (Array.isArray(list) ? list.find(r => r.id === id) : null));
+const _economyGetRobotAtTile = window.RF_UTIL?.getRobotAtTile || ((x, y, list) => (Array.isArray(list) ? list.find(r => r.tileX === x && r.tileY === y) : null));
+const _economyNormalizeCropType = window.RF_UTIL?.normalizeCropType || (type => (typeof type === 'string' && S.crops[type]) ? type : null);
+
 function handleTileClick(tx, ty, e) {
   if (!inBounds(tx, ty)) return;
+  const silent = !!e?.silent;
+  const emit = silent ? () => {} : notify;
 
   // Work area assignment
   if (assigningWorkArea && selectedRobotId !== null) {
-    const bot = robots.find(r => r.id === selectedRobotId);
+    const bot = _economyGetRobotById(selectedRobotId, robots);
     if (bot) {
-      bot.workArea = { x: tx, y: ty, radius: 8 };
-      document.getElementById('robot-area-display').textContent = `(${tx}, ${ty}) r=8`;
-      notify(`🤖 ${bot.name} work area set to (${tx}, ${ty})`);
+      const radiusInput = document.getElementById('robot-area-radius');
+      const selectedRadius = Math.max(2, Math.min(24, Math.floor(Number(radiusInput?.value) || bot.defaultRadius || 8)));
+      bot.workArea = { x: tx, y: ty, radius: selectedRadius };
+      const areaDisplay = document.getElementById('robot-area-display');
+      if (areaDisplay) areaDisplay.textContent = `(${tx}, ${ty}) r=${selectedRadius}`;
+      emit(`🤖 ${bot.name} work area set to (${tx}, ${ty}) r=${selectedRadius}`);
     }
-    cancelAssign(); return;
+    cancelAssign();
+    if (typeof openModal === 'function') openModal('robots');
+    if (bot && typeof selectConfigRobot === 'function') selectConfigRobot(bot.id);
+    return;
   }
 
   const tile = world[ty][tx];
 
   if (currentTool === 'hand') {
     // Check if clicking a robot
-    const bot = robots.find(r => r.tileX === tx && r.tileY === ty);
+    const bot = _economyGetRobotAtTile(tx, ty, robots);
     if (bot) { selectedRobotId = bot.id; openModal('robots'); return; }
     // Harvest ready crop
     if (tile.crop) {
-      const cfg = S.crops[tile.crop.type];
+      const cropType = _economyNormalizeCropType(tile.crop.type);
+      const cfg = cropType ? S.crops[cropType] : null;
+      if (!cfg) {
+        emit('⚠️ Unknown crop type on this tile. Add it back in settings to harvest.');
+        return;
+      }
       if (tile.crop.stage >= cfg.stages - 1) {
-        const got = cfg.yield;
-        inventory.crops[tile.crop.type] = (inventory.crops[tile.crop.type] || 0) + got;
+        const got = (typeof getHarvestYieldForTile === 'function')
+          ? getHarvestYieldForTile(tx, ty, cropType)
+          : Math.max(1, Math.floor(cfg.yield || 1));
+        const prevCrop = Number.isFinite(inventory.crops[cropType]) ? inventory.crops[cropType] : 0;
+        const prevSeed = Number.isFinite(inventory.seeds[cropType]) ? inventory.seeds[cropType] : 0;
+        inventory.crops[cropType] = prevCrop + got;
+        inventory.seeds[cropType] = prevSeed + got;
         productionStats.today.harvested += got;
+        if (typeof recordGoalMetric === 'function') recordGoalMetric('manualHarvests', got);
         spawnParticles(tx * TILE + TILE/2, ty * TILE, 'harvest', 12);
-        notify(`${cfg.emoji} Harvested ${got}x ${tile.crop.type}!`);
-        tile.crop = null; updateUI(); checkMilestones();
-      } else notify(`🕐 Crop not ready yet (${tile.crop.stage + 1}/${cfg.stages})`);
+        emit(`${cfg.emoji} Harvested ${got}x ${cropType}!`);
+        tile.crop = null;
+        if (typeof markTileDirty === 'function') markTileDirty(tx, ty);
+        if (typeof _refreshInventoryViews === 'function') _refreshInventoryViews();
+        else updateUI();
+        checkMilestones();
+      } else emit(`🕐 Crop not ready yet (${tile.crop.stage + 1}/${cfg.stages})`);
     }
   } else if (currentTool === 'hoe') {
     if (isTillableTile(tile)) {
       tile.type = 'tilled';
+      if (typeof markTileDirty === 'function') markTileDirty(tx, ty);
+      if (typeof markTileDeveloped === 'function') markTileDeveloped(tx, ty);
       spawnParticles(tx * TILE + TILE/2, ty * TILE, 'dirt', 6);
-    } else if (tile.type === 'tilled' && !tile.crop) {
+    } else if (tile.type === 'tilled' && !tile.crop && !!e?.shiftKey) {
       tile.type = 'grass';
+      if (typeof markTileDirty === 'function') markTileDirty(tx, ty);
     }
   } else if (currentTool === 'water') {
-    if (tile.type === 'tilled' && tile.crop && !tile.crop.watered) {
-      const cfg = S.crops[tile.crop.type];
+    if (tile.type === 'tilled' && tile.crop) {
+      const cropType = _economyNormalizeCropType(tile.crop.type);
+      const cfg = cropType ? S.crops[cropType] : null;
+      if (!cfg) {
+        emit('⚠️ Unknown crop type on this tile. Add it back in settings to water.');
+        return;
+      }
+      if (typeof normalizeCropHydration === 'function') normalizeCropHydration(tile.crop);
       if (tile.crop.waterCount < cfg.waterNeeded) {
+        tile.crop.waterCount++;
+        tile.crop.waterDay = day;
         tile.crop.watered = true;
+        if (typeof markTileDirty === 'function') markTileDirty(tx, ty);
+        if (typeof recordGoalMetric === 'function') recordGoalMetric('waterActions', 1);
         spawnParticles(tx * TILE + TILE/2, ty * TILE, 'water', 8);
-        notify(`💧 Watered ${tile.crop.type} (${tile.crop.waterCount + 1}/${cfg.waterNeeded})`);
-      } else notify(`✅ Crop is fully watered!`);
-    } else notify(`💧 Nothing to water here!`);
+        emit(`💧 Watered ${cropType} (${tile.crop.waterCount}/${cfg.waterNeeded})`);
+      } else emit(`✅ Crop is fully watered!`);
+    } else emit(`💧 Nothing to water here!`);
   } else if (currentTool === 'robot_place') {
     if (isWalkable(tx, ty)) {
+      const occupyingBot = _economyGetRobotAtTile(tx, ty, robots);
+      if (occupyingBot) { emit(`⚠️ Tile occupied by ${occupyingBot.name}.`); return; }
       const maxBots = S.robots.maxRobots + getRFSMaxRobotBonus();
-      if (robots.length >= maxBots) { notify(`⚠️ Max robots reached (${maxBots})`); return; }
+      if (robots.length >= maxBots) { emit(`⚠️ Max robots reached (${maxBots})`); return; }
       // Auto-pick type if only one kind is in stock
       if (!playerHasRobot(pendingRobotType)) {
         const inStock = Object.keys(robotsOwned).find(k => (robotsOwned[k] || 0) > 0);
         if (inStock) pendingRobotType = inStock;
-        else { notify(`🤖 Buy a robot at the Shop (E) first!`); return; }
+        else { emit(`🤖 Buy a robot at the Shop (E) first!`); return; }
       }
       usePlayerRobot(pendingRobotType);
       const bot = new Robot(tx, ty, pendingRobotType);
       robots.push(bot);
+      if (typeof recordGoalMetric === 'function') recordGoalMetric('robotsPlaced', 1);
       const td = ROBOT_TYPES[pendingRobotType] || ROBOT_TYPES.basic;
-      notify(`${td.emoji} ${bot.name} deployed!`);
+      emit(`${td.emoji} ${bot.name} deployed!`);
       updateUI(); checkMilestones();
     }
   } else {
@@ -71,14 +114,17 @@ function handleTileClick(tx, ty, e) {
     const cropType = currentTool;
     if (S.crops[cropType]) {
       if (!inventory.seeds[cropType] || inventory.seeds[cropType] <= 0) {
-        notify(`❌ No ${cropType} seeds! Buy some at the Shop.`); return;
+        emit(`❌ No ${cropType} seeds! Buy some at the Shop.`); return;
       }
       if (tile.type === 'tilled' && !tile.crop) {
         inventory.seeds[cropType]--;
-        tile.crop = { type: cropType, stage: 0, growTimer: 0, waterCount: 0, watered: false };
+        tile.crop = { type: cropType, stage: 0, growTimer: 0, waterCount: 0, watered: false, waterDay: day };
+        if (typeof markTileDirty === 'function') markTileDirty(tx, ty);
+        if (typeof markTileDeveloped === 'function') markTileDeveloped(tx, ty);
+        if (typeof recordGoalMetric === 'function') recordGoalMetric('tilesPlanted', 1);
         spawnParticles(tx * TILE + TILE/2, ty * TILE, 'dirt', 4);
         updateUI();
-      } else if (tile.type !== 'tilled') notify(`⛏️ Till the soil first!`);
+      } else if (tile.type !== 'tilled') emit(`⛏️ Till the soil first!`);
     }
   }
 }
@@ -87,6 +133,7 @@ function handleTileClick(tx, ty, e) {
  * PLAYER ROBOT INVENTORY
  * ═══════════════════════════════════════════════════════════════════════════ */
 let robotsOwned = { rust: 0, basic: S.player.startRobots || 0, pro: 0 };
+let robotVouchers = {};
 let pendingRobotType = 'basic';
 function playerHasRobot(type) { return (robotsOwned[type] || 0) > 0; }
 function usePlayerRobot(type) { robotsOwned[type] = Math.max(0, (robotsOwned[type] || 0) - 1); }
@@ -105,20 +152,31 @@ refreshPrices();
 function getCropPrice(type) { return Math.round((S.economy.cropPrices[type] || 10) * (priceMultipliers[type] || 1)); }
 
 function buySeeds(type, qty) {
-  const cost = (S.economy.seedPrices[type] || 5) * qty;
+  const cropType = _economyNormalizeCropType(type);
+  if (!cropType) return;
+  const amount = Math.max(1, Math.floor(Number(qty) || 0));
+  const cost = (S.economy.seedPrices[cropType] || 5) * amount;
   if (coins < cost) { notify(`❌ Need ${cost} coins!`); return; }
-  coins -= cost; inventory.seeds[type] = (inventory.seeds[type] || 0) + qty;
-  notify(`✅ Bought ${qty}x ${S.crops[type]?.emoji} ${type} seeds!`);
+  coins -= cost;
+  inventory.seeds[cropType] = (inventory.seeds[cropType] || 0) + amount;
+  notify(`✅ Bought ${amount}x ${S.crops[cropType]?.emoji} ${cropType} seeds!`);
   updateUI(); buildShop();
 }
 
 function buyRobot(type = 'basic') {
-  const td = ROBOT_TYPES[type] || ROBOT_TYPES.basic;
-  if (coins < td.cost) { notify(`❌ Need ${td.cost} coins!`); return; }
-  coins -= td.cost;
-  robotsOwned[type] = (robotsOwned[type] || 0) + 1;
-  pendingRobotType = type;
-  notify(`${td.emoji} ${td.name} purchased! Select Robot tool (9) to place.`);
+  const robotType = ROBOT_TYPES[type] ? type : 'basic';
+  const td = ROBOT_TYPES[robotType] || ROBOT_TYPES.basic;
+  const vouchers = Math.max(0, Math.floor(Number(robotVouchers[robotType]) || 0));
+  const usingVoucher = vouchers > 0;
+  const finalCost = usingVoucher ? 0 : Math.max(0, Math.floor(Number(td.cost) || 0));
+  if (coins < finalCost) { notify(`❌ Need ${finalCost} coins!`); return; }
+  coins -= finalCost;
+  if (usingVoucher) robotVouchers[robotType] = vouchers - 1;
+  robotsOwned[robotType] = (robotsOwned[robotType] || 0) + 1;
+  pendingRobotType = robotType;
+  if (typeof selectTool === 'function') selectTool('robot_place');
+  if (typeof recordGoalMetric === 'function') recordGoalMetric('robotsPurchased', 1);
+  notify(`${td.emoji} ${td.name} purchased${usingVoucher ? ' with voucher' : ''}! Select Robot tool (9) to place.`);
   updateUI(); buildShop();
 }
 
@@ -130,6 +188,10 @@ function sellCrop(type) {
   const sellBonus = getBuPopSellBonus();
   const earned = Math.round(getCropPrice(type) * qty * bonus * sellBonus);
   coins += earned;
+  if (typeof recordGoalMetric === 'function') {
+    recordGoalMetric('cropsSold', qty);
+    recordGoalMetric('coinsFromSales', earned);
+  }
   productionStats.today.income += earned;
   COMPANIES.bupop.price = Math.min(2000, COMPANIES.bupop.price * (1 + earned * 0.00002));
   delete inventory.crops[type];
@@ -137,23 +199,121 @@ function sellCrop(type) {
   updateUI(); buildSellGrid();
 }
 
-function sellAll() {
+function sellAll(opts = {}) {
   let total = 0;
+  let soldQty = 0;
   const threshold = getBuPopBulkThreshold();
   const sellBonus = getBuPopSellBonus();
-  for (const [type, qty] of Object.entries(inventory.crops)) {
+  for (const [type, rawQty] of Object.entries(inventory.crops)) {
+    const qty = Math.max(0, Math.floor(Number(rawQty) || 0));
     if (qty > 0) {
+      soldQty += qty;
       const bonus = qty >= threshold ? S.economy.bulkBonus : 1;
       total += Math.round(getCropPrice(type) * qty * bonus * sellBonus);
     }
   }
-  if (total === 0) { notify(`❌ Nothing to sell!`); return; }
+  if (total === 0) {
+    if (!opts.silent) notify(`❌ Nothing to sell!`);
+    return 0;
+  }
   coins += total;
+  if (typeof recordGoalMetric === 'function') {
+    recordGoalMetric('cropsSold', soldQty);
+    recordGoalMetric('coinsFromSales', total);
+  }
   productionStats.today.income += total;
   COMPANIES.bupop.price = Math.min(2000, COMPANIES.bupop.price * (1 + total * 0.00002));
   inventory.crops = {};
-  notify(`💰 Sold everything for ${total} coins!`);
-  updateUI(); buildSellGrid();
+  if (!opts.silent) notify(`💰 Sold everything for ${total} coins!`);
+  if (!opts.suppressRefresh) {
+    updateUI();
+    buildSellGrid();
+  }
+  return total;
+}
+
+function _getSeedStockForCrop(cropType) {
+  let total = Number(inventory.seeds[cropType]) || 0;
+  for (const bot of robots) {
+    total += Number(bot?.inventory?.seeds?.[cropType]) || 0;
+  }
+  return total;
+}
+
+function restockSeedsForRobotLoop(opts = {}) {
+  const targetPerRobot = Math.max(4, Math.min(64, Math.floor(Number(opts.targetPerRobot) || 16)));
+  const demandByCrop = {};
+  for (const bot of robots) {
+    const cropType = bot.assignedCrop || Object.keys(S.crops || {})[0];
+    if (!cropType || !S.crops[cropType]) continue;
+    demandByCrop[cropType] = (demandByCrop[cropType] || 0) + targetPerRobot;
+  }
+
+  let purchased = 0;
+  let spent = 0;
+  let touched = 0;
+  for (const [cropType, demand] of Object.entries(demandByCrop)) {
+    const unit = Math.max(1, Math.floor(Number(S.economy.seedPrices[cropType]) || 5));
+    const have = _getSeedStockForCrop(cropType);
+    const need = Math.max(0, demand - have);
+    if (need <= 0) continue;
+    const afford = Math.max(0, Math.floor(coins / unit));
+    const qty = Math.min(need, afford);
+    if (qty <= 0) continue;
+    const cost = qty * unit;
+    coins -= cost;
+    inventory.seeds[cropType] = (inventory.seeds[cropType] || 0) + qty;
+    purchased += qty;
+    spent += cost;
+    touched++;
+  }
+
+  if (!opts.suppressRefresh) {
+    updateUI();
+    if (typeof buildShop === 'function') buildShop();
+  }
+  if (!opts.silent) {
+    if (purchased > 0) notify(`🧺 Restocked ${purchased} seeds (${spent} coins) across ${touched} crops.`);
+    else notify('🧺 Seed restock skipped (already stocked or low coins).');
+  }
+  return { purchased, spent, crops: touched };
+}
+
+function runFarmTurnoverLoop(opts = {}) {
+  const collected = (typeof collectAllRobotsToPlayer === 'function')
+    ? collectAllRobotsToPlayer({ silent: true, suppressRefresh: true })
+    : { crops: 0, seeds: 0, robots: 0 };
+  const soldCoins = sellAll({ silent: true, suppressRefresh: true });
+  const restocked = restockSeedsForRobotLoop({ targetPerRobot: opts.targetPerRobot || 16, silent: true, suppressRefresh: true });
+  const distributed = (typeof distributeAssignedSeedsToAllRobots === 'function')
+    ? distributeAssignedSeedsToAllRobots({ perRobot: opts.perRobot || 10, silent: true, suppressRefresh: true })
+    : { sent: 0, robots: 0 };
+
+  updateUI();
+  if (typeof buildSellGrid === 'function') buildSellGrid();
+  if (typeof buildShop === 'function') buildShop();
+  if (typeof _isInventoryModalOpen === 'function' && typeof buildInventoryModal === 'function' && _isInventoryModalOpen()) {
+    buildInventoryModal();
+  }
+  if (typeof buildRobotList === 'function') buildRobotList();
+
+  if (!opts.silent) {
+    const soldPart = soldCoins > 0 ? `Sold ${soldCoins}c` : 'No crops sold';
+    const restockPart = restocked.purchased > 0
+      ? `restocked ${restocked.purchased} seeds`
+      : 'no restock';
+    const distPart = distributed.sent > 0
+      ? `distributed ${distributed.sent}`
+      : 'no distribution';
+    notify(`♻️ Turnover complete: ${soldPart}, ${restockPart}, ${distPart}.`);
+  }
+
+  return {
+    soldCoins: soldCoins || 0,
+    collected,
+    restocked,
+    distributed,
+  };
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -167,7 +327,10 @@ function getBuPopSellBonus()   {
   const n = COMPANIES.bupop.sharesOwned;
   return n >= 25 ? 1.15 : n >= 3 ? 1.08 : 1;
 }
-function getBuPopBulkThreshold() { return COMPANIES.bupop.sharesOwned >= 8 ? 5 : 10; }
+function getBuPopBulkThreshold() {
+  const n = COMPANIES.bupop.sharesOwned;
+  return n >= 15 ? 3 : n >= 8 ? 5 : 10;
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * STOCK PRICE SIMULATION
@@ -182,8 +345,12 @@ function updateStockPrices() {
   if (COMPANIES.rfs.priceHistory.length > 30) COMPANIES.rfs.priceHistory.shift();
 
   // BuPop: biased by sell income and seasonal demand
-  const seasonFactors = [1.08, 1.02, 1.12, 0.88];
-  const seasonMod = seasonFactors[season % 4] || 1;
+  const seasonName = String(SEASONS[season % SEASONS.length] || '').toLowerCase();
+  const seasonMod = seasonName === 'spring' ? 1.08
+    : seasonName === 'summer' ? 1.02
+      : seasonName === 'autumn' ? 1.12
+        : seasonName === 'winter' ? 0.88
+          : 1;
   const bpBias = 0.501 + Math.min(productionStats.today.income * 0.00004, 0.1) + (seasonMod - 1) * 0.3;
   const bpDir = Math.random() < bpBias ? 1 : -1;
   const bpSwing = (0.01 + Math.random() * COMPANIES.bupop.volatility) * COMPANIES.bupop.price;
@@ -439,8 +606,10 @@ function refreshEconomyUI() {
 
 function setChartView(id) {
   chartViewCompany = id;
-  document.getElementById('chart-btn-rfs').className   = 'chart-toggle-btn' + (id === 'rfs'   ? ' active-rfs'   : '');
-  document.getElementById('chart-btn-bupop').className = 'chart-toggle-btn' + (id === 'bupop' ? ' active-bupop' : '');
+  const rfsBtn = document.getElementById('chart-btn-rfs');
+  const bpBtn = document.getElementById('chart-btn-bupop');
+  if (rfsBtn) rfsBtn.className = 'chart-toggle-btn' + (id === 'rfs' ? ' active-rfs' : '');
+  if (bpBtn) bpBtn.className = 'chart-toggle-btn' + (id === 'bupop' ? ' active-bupop' : '');
   refreshEconomyUI();
 }
 
@@ -450,7 +619,7 @@ function setChartView(id) {
 function buyShares(companyId, rawQty) {
   const co = COMPANIES[companyId];
   if (!co) return;
-  const qty = Math.max(1, parseInt(rawQty) || 1);
+  const qty = Math.max(1, Math.floor(Number(rawQty) || 1));
   const cost = Math.round(co.price * qty);
   if (coins < cost) { notify(`❌ Need ${cost} coins to buy ${qty}x ${co.ticker}!`); return; }
   coins -= cost;
@@ -462,7 +631,7 @@ function buyShares(companyId, rawQty) {
 function sellShares(companyId, rawQty) {
   const co = COMPANIES[companyId];
   if (!co) return;
-  const qty = Math.max(1, parseInt(rawQty) || 1);
+  const qty = Math.max(1, Math.floor(Number(rawQty) || 1));
   if (co.sharesOwned < qty) { notify(`❌ You only own ${co.sharesOwned}x ${co.ticker}!`); return; }
   const earned = Math.round(co.price * qty);
   coins += earned;

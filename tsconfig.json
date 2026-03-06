@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "none",
+    "rootDir": "src-ts",
+    "outDir": ".ts-build",
+    "alwaysStrict": false,
+    "removeComments": false,
+    "sourceMap": false,
+    "noEmitOnError": false,
+    "pretty": false
+  },
+  "include": [
+    "src-ts/settings.ts",
+    "src-ts/state.ts",
+    "src-ts/loop.ts",
+    "src-ts/menu.ts",
+    "src-ts/io.ts",
+    "src-ts/render.ts"
+  ]
+}

@@ -30,12 +30,25 @@
       <button class="menu-btn" id="menu-btn-settings" onclick="menuShowView('settings')">SETTINGS</button>
       <button class="menu-btn danger" id="menu-btn-quit" onclick="menuQuit()">QUIT</button>
     </div>
-    <div class="menu-version" id="menu-version-label">v0.2.3</div>
+    <div class="menu-ambient-strip">
+      <span id="menu-bg-status">🌱 preparing live farm...</span>
+      <span id="menu-shortcut-hint">ESC · menu/back</span>
+    </div>
+    <div class="menu-version" id="menu-version-label">v0.2.4</div>
   </div>
 
   <!-- New Game / slot picker -->
   <div id="menu-new-game" class="menu-view">
     <div class="menu-sub-title">SELECT SLOT</div>
+    <div class="menu-world-panel" id="menu-world-panel">
+      <div class="menu-world-head">
+        <div class="menu-world-title">WORLD ARCHETYPE</div>
+        <button class="menu-world-reset" id="menu-world-reset-btn" type="button" onclick="menuResetWorldDraft()">RESET</button>
+      </div>
+      <div class="menu-archetype-chips" id="menu-world-archetype-chips"></div>
+      <div class="menu-world-archetype-note" id="menu-world-archetype-note"></div>
+      <div class="menu-world-advanced" id="menu-world-advanced"></div>
+    </div>
     <div class="menu-slots" id="menu-new-slots"></div>
     <button class="menu-btn back-btn" onclick="menuShowView('main')">◀ BACK</button>
   </div>
@@ -96,24 +109,33 @@
 <!-- Top Bar -->
 <div id="topbar">
   <div id="game-title">🌾 ROBO FARM</div>
-  <div class="stat-block">💰 <span id="stat-coins" class="val">250</span></div>
-  <div class="stat-block">📅 Day <span id="stat-day" class="val">1</span></div>
-  <div class="stat-block" id="stat-season-block">🌸 <span id="stat-season" class="val">Spring</span></div>
-  <div class="stat-block">⏰ <span id="stat-time" class="val">Morning</span></div>
+  <div id="topbar-stats">
+    <div class="stat-block">💰 <span id="stat-coins" class="val">250</span></div>
+    <div class="stat-block">📅 Day <span id="stat-day" class="val">1</span></div>
+    <div class="stat-block" id="stat-season-block">🌸 <span id="stat-season" class="val">Spring</span></div>
+    <div class="stat-block">⏰ <span id="stat-time" class="val">Morning</span></div>
+    <div class="stat-block">🌦 <span id="stat-weather" class="val">☀️ Clear</span></div>
+  </div>
   <div id="topbar-right">
     <button class="top-btn" onclick="openMenu()" title="Menu / Pause [Esc]">☰ Menu</button>
-    <button class="top-btn" onclick="openModal('shop')">🏪 Shop</button>
-    <button class="top-btn" onclick="openModal('robots')">🤖 Robots</button>
-    <button class="top-btn" onclick="openModal('docs')">📖 Docs</button>
+    <button class="top-btn" onclick="openModal('shop')" title="Shop [E] · Sell Tab [X]">🏪 Shop</button>
+    <button class="top-btn" onclick="openModal('robots')" title="Robot Manager [R]">🤖 Robots</button>
+    <button class="top-btn" onclick="openModal('docs')" title="Guide [F]">📖 Docs</button>
     <button class="top-btn" onclick="openModal('files')" title="World Backup & Import">📁 Files</button>
     <button class="top-btn" onclick="saveGame(currentSlot)" title="Save Game">💾</button>
-    <button class="top-btn" onclick="openModal('economy')" style="border-color:#4a7a3a;color:#80d060">📈 Economy</button>
+    <button class="top-btn" onclick="openModal('economy')" style="border-color:#4a7a3a;color:#80d060" title="Economy [G]">📈 Economy</button>
+    <button class="top-btn" onclick="runFarmTurnoverLoop()" style="border-color:#6a7a3a;color:#b8d66a" title="Robot→Player Turnover [C]">♻ Loop</button>
     <button class="top-btn" onclick="openModal('inventory')" title="Inventory [I]">🎒 Bag</button>
-    <button class="top-btn" onclick="openModal('changelog')" style="border-color:#3a5a3a;color:#80cc80">📋 v0.2.3</button>
+    <button class="top-btn" onclick="openModal('changelog')" style="border-color:#3a5a3a;color:#80cc80">📋 v0.2.4</button>
   </div>
 </div>
-<div id="save-flash" style="position:fixed;top:50px;right:12px;z-index:601;pointer-events:none;font-family:'Press Start 2P',monospace;font-size:7px;color:#80ff80;opacity:0;transition:opacity 0.3s">✓ saved</div>
-<div id="milestone-banner" style="position:fixed;top:56px;left:50%;transform:translateX(-50%);background:rgba(18,14,8,0.96);border:2px solid var(--gold);padding:10px 22px;z-index:700;pointer-events:none;font-family:'Press Start 2P',monospace;font-size:8px;color:var(--gold);text-align:center;opacity:0;transition:opacity 0.4s"><div id="milestone-text"></div><div id="milestone-sub" style="color:var(--text-dim);font-size:10px;margin-top:5px;font-family:'VT323',monospace"></div></div>
+<div id="save-flash">✓ saved</div>
+<div id="goal-panel">
+  <div class="goal-panel-title">GOAL PATH</div>
+  <div id="goal-list"></div>
+  <div id="goal-vouchers"></div>
+</div>
+<div id="milestone-banner"><div id="milestone-text"></div><div id="milestone-sub" class="msub"></div></div>
 
 <!-- Hotbar -->
 <div id="hotbar">
@@ -179,13 +201,13 @@
       <button class="tab-btn" onclick="switchTab('shop','sell')">Sell Crops</button>
     </div>
     <div id="shop-tab-buy" class="tab-content active">
-      <div style="color:var(--text-dim);font-size:13px;margin-bottom:10px">Click a seed to buy 5 at a time. Hold Shift to buy 1.</div>
+      <div style="color:var(--text-dim);font-size:13px;margin-bottom:10px">Click a seed to buy 5. Hold Shift for 1, Ctrl/Cmd for 25, or Alt for max affordable.</div>
       <div class="shop-grid" id="seed-shop-grid"></div>
     </div>
     <div id="shop-tab-equipment" class="tab-content">
       <div class="shop-grid" id="equipment-robot-grid" style="grid-template-columns: repeat(3, 1fr)"></div>
       <div style="color:var(--text-dim);font-size:12px;margin-top:10px;padding:8px;border:1px solid var(--ui-border);line-height:1.6">
-        🤖 Buy a robot then select the <b style="color:var(--text)">Robot tool (9)</b> to place it. The last purchased type is auto-selected. Click any placed robot to configure it.
+        🤖 Progress through Goal Path to earn vouchers, or buy robots directly with coins. Then select the <b style="color:var(--text)">Robot tool (9)</b> to place. The last purchased type is auto-selected.
       </div>
     </div>
     <div id="shop-tab-sell" class="tab-content">
@@ -206,12 +228,18 @@
   </div>
   <div class="modal-body">
     <div style="color:var(--text-dim);font-size:13px;margin-bottom:10px">Select a robot to configure it. Or use the Robot tool to place/select them on the map!</div>
+    <div class="robot-loop-actions">
+      <button class="game-btn" onclick="collectAllRobotsToPlayer()">📦 Collect All Robots</button>
+      <button class="game-btn" onclick="distributeAssignedSeedsToAllRobots()">🌱 Distribute Assigned Seeds</button>
+      <button class="game-btn success" onclick="runFarmTurnoverLoop()">♻ Run Turnover</button>
+    </div>
     <div id="robot-list"></div>
     <div id="robot-config-panel" class="robot-detail-panel">
       <div style="color:var(--gold);font-family:'Press Start 2P',monospace;font-size:9px;margin-bottom:10px" id="config-robot-name">BOT-1</div>
       <div class="detail-row">
         <span class="detail-label">BEHAVIOR</span>
         <select class="game-select" id="robot-behavior-select" onchange="applyRobotBehavior()"></select>
+        <button class="game-btn" onclick="applyRobotBehaviorToAll()" style="font-size:7px">Apply All</button>
       </div>
       <div class="detail-row">
         <span class="detail-label">PLANT CROP</span>
@@ -223,11 +251,21 @@
           <option value="potato">🥔 Potato</option>
           <option value="tomato">🍅 Tomato</option>
         </select>
+        <button class="game-btn" onclick="applyRobotCropToAll()" style="font-size:7px">Apply All</button>
       </div>
       <div class="detail-row">
         <span class="detail-label">WORK AREA</span>
         <span class="detail-value" id="robot-area-display" style="color:var(--text-dim);font-size:14px">Not set</span>
         <button class="game-btn" onclick="startSetWorkArea()" style="font-size:7px">Set Area</button>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">AREA RADIUS</span>
+        <input class="game-input" id="robot-area-radius" type="range" min="2" max="24" value="8" oninput="syncRobotAreaRadiusLabel()">
+        <span class="detail-value detail-mini" id="robot-area-radius-val">8</span>
+      </div>
+      <div class="detail-row robot-quick-actions">
+        <button class="game-btn" onclick="giveAssignedSeedsToSelectedRobot()">🌱 Give Assigned Seeds</button>
+        <button class="game-btn" onclick="collectSelectedRobotAll()">📦 Collect All</button>
       </div>
       <div style="margin-top:10px">
         <div style="color:var(--gold-dim);font-family:'Press Start 2P',monospace;font-size:7px;margin-bottom:6px">⚡ CUSTOM JS CODE (optional)</div>
@@ -252,7 +290,7 @@
 api.findCrop(robot, filter) → tile | null
   filter: { ready?, needsWater?, type?, maxDist?, cx?, cy? }
 api.findTile(robot, filter) → tile | null
-  filter: { tileType?, empty?, maxDist? }
+  filter: { tileType?, tillable?, empty?, maxDist?, cx?, cy? }
 api.moveTo(robot, x, y)     → walk toward tile
 api.water(robot, x, y)      → water a crop
 api.harvest(robot, x, y)    → harvest ready crop
@@ -316,8 +354,10 @@ if (t) {
       <p><span class="key">F</span> — Open this guide!</p>
       <p><span class="key">Scroll Wheel</span> — Zoom in/out</p>
       <p><span class="key">Space</span> — Use tool on tile under player</p>
+      <p><span class="key">V</span> — Enter/exit the farm car when you're nearby</p>
+      <p><span class="key">Shift (while driving)</span> — Handbrake drift. Hold + steer to charge turbo, then release for a speed burst.</p>
       <p><span class="key">ESC</span> — Cancel action / close menus</p>
-      <div class="tip">💡 <strong>Pro tip:</strong> You don't have to click exactly on tiles — any click near a tile in the game world will use your current tool on the nearest valid target!</div>
+      <div class="tip">💡 <strong>Pro tip:</strong> You don't have to click exactly on tiles — any click near a tile in the game world will use your current tool on the nearest valid target. In the car, watch the drift-charge bar above the hood to time your turbo release.</div>
       <h3>THE GOAL</h3>
       <p>There's no real "end" — just an endlessly satisfying farming loop. <strong>Plant crops, grow them, harvest them, sell them, buy more robots</strong>. Watch your little mechanical farm hands automate everything while you sip virtual coffee and design even better robot programs.</p>
     </div>
@@ -329,7 +369,7 @@ if (t) {
       <p><strong>Step 2 — Plant a Seed:</strong> Select any seed from your hotbar (<span class="key">4</span>–<span class="key">8</span>) and click a tilled tile. Your farmer will press the seed into the ground. Make sure you actually have seeds — buy them at the Shop!</p>
       <p><strong>Step 3 — Water It:</strong> Select the Watering Can (<span class="key">3</span>) and click your planted tile. You'll see the soil darken. Each crop needs watering multiple times throughout its growth cycle.</p>
       <p><strong>Step 4 — Harvest:</strong> When a crop reaches full size (it'll look bigger and more vibrant!), use the Hand tool (<span class="key">1</span>) and click it. The crops pop into your inventory!</p>
-      <div class="tip">💡 <strong>Rain!</strong> On rainy days, ALL crops get watered automatically. Watch for the weather forecast in the top bar — plan ahead!</div>
+      <div class="tip">💡 <strong>Weather matters:</strong> Rain, thunder, and hail water crops automatically, while snow slows growth. Watch the daily forecast and plan robot tasks around it.</div>
       <h3>CROP GUIDE</h3>
       <p><strong>🌾 Wheat</strong> — The starter crop. Fast-growing, low maintenance. Great for beginners and bulk production.</p>
       <p><strong>🥕 Carrot</strong> — Mid-tier. Decent value, moderate water needs. Good middle-ground crop.</p>
@@ -342,7 +382,7 @@ if (t) {
     </div>
     <div id="docs-tab-robots" class="tab-content">
       <h2>🤖 ROBOT GUIDE</h2>
-      <p>Robots are your best friends. Once you automate your farm, you can focus on expansion, design, and making your robot programs smarter. Buy your first robot at the Shop for 200 coins!</p>
+      <p>Robots are your best friends. Once you automate your farm, you can focus on expansion, design, and making your robot programs smarter. Early on, follow the Goal Path panel to earn your first robot voucher while you build a stable manual farm.</p>
       <h3>PLACING ROBOTS</h3>
       <p>Select the Robot tool (<span class="key">9</span>) and click any walkable tile to place a robot there. The robot will stand by, waiting for instructions. You can have up to 12 robots at once!</p>
       <h3>ASSIGNING TASKS (NO CODING)</h3>
@@ -382,8 +422,8 @@ if (t) {
     <div id="docs-tab-tips" class="tab-content">
       <h2>✨ TIPS & TRICKS</h2>
       <h3>EARLY GAME</h3>
-      <p>Start by tilling a 5x5 plot and planting all your starter wheat. Water it twice and you'll have your first harvest in about a day. Sell those crops and immediately buy your first robot!</p>
-      <p>A single "Full Cycle" robot assigned to your wheat field will keep it running while you expand your farm. Use your own time for new development!</p>
+      <p>Start by tilling a 5x5 plot and planting all your starter wheat. Water consistently and sell in batches. Your first objective chain is tuned to reward this manual loop before automation.</p>
+      <p>Once you earn your first robot voucher, buy and place a "Full Cycle" bot to keep one field alive while you expand manually elsewhere.</p>
       <h3>MID GAME</h3>
       <p>Three robots is the sweet spot for early automation: one waterer, one planter, one harvester. Or use three "Full Cycle" bots for maximum efficiency.</p>
       <p>Don't sleep on <strong>Potatoes</strong> — they yield 5 items per harvest and only need watering twice. Excellent robot food!</p>
@@ -432,7 +472,68 @@ if (t) {
     <span class="modal-close" onclick="closeModal('changelog')">✕</span>
   </div>
   <div class="modal-body changelog-body">
-    <div class="changelog-version">ROBO FARM  ·  v0.2.3</div>
+    <div class="changelog-version">ROBO FARM  ·  v0.2.4</div>
+    <div class="changelog-subtitle">"The Tightening" — world generation, farming depth, and robot flow got a major overhaul.</div>
+
+    <div class="changelog-section">
+      <div class="changelog-section-title">★ NEW FEATURES</div>
+      <div class="changelog-entry">
+        <div class="changelog-star">🗺️</div>
+        <div class="changelog-text">
+          <strong>World Archetype Selector</strong><br>
+          New Game now includes selectable archetypes plus advanced world controls for tree density, rock density, pond size, river width, and water spread.
+        </div>
+      </div>
+      <div class="changelog-entry">
+        <div class="changelog-star">🌦️</div>
+        <div class="changelog-text">
+          <strong>Biome, Moisture, and Fertility Systems</strong><br>
+          The map is now generated in biome zones, with moisture and fertility layers that affect crop growth, watering pressure, and harvest output.
+        </div>
+      </div>
+      <div class="changelog-entry">
+        <div class="changelog-star">🍂</div>
+        <div class="changelog-text">
+          <strong>Living Terrain Events</strong><br>
+          Daily regrowth and seasonal world events now shift wilderness tiles over time, making long-term farm layout and maintenance more strategic.
+        </div>
+      </div>
+    </div>
+
+    <div class="changelog-section">
+      <div class="changelog-section-title">✦ SMALL THINGS THAT FEEL GREAT</div>
+      <div class="changelog-entry">
+        <div class="changelog-star">💾</div>
+        <div class="changelog-text"><strong>Save format v3 + migration</strong> — older saves auto-migrate forward with world metadata support, and import/export now preserve new terrain data safely.</div>
+      </div>
+      <div class="changelog-entry">
+        <div class="changelog-star">⚠️</div>
+        <div class="changelog-text"><strong>Load compatibility checks</strong> — save files with mismatched world dimensions now show clear incompatibility warnings instead of silently truncating data.</div>
+      </div>
+      <div class="changelog-entry">
+        <div class="changelog-star">🌱</div>
+        <div class="changelog-text"><strong>Unified harvest balancing</strong> — manual and robot harvesting now use the same fertility-aware yield rules, so output scaling stays consistent.</div>
+      </div>
+      <div class="changelog-entry">
+        <div class="changelog-star">🧭</div>
+        <div class="changelog-text"><strong>Robot pathing rewrite</strong> — bots now route to workable adjacency, recover from traffic stalls, and repath with less convoy deadlock in dense farms.</div>
+      </div>
+      <div class="changelog-entry">
+        <div class="changelog-star">🤖</div>
+        <div class="changelog-text"><strong>Robot manager QoL</strong> — apply behavior/crop to all robots, set area radius directly, quick-send assigned seeds, and collect from the selected robot without leaving the panel.</div>
+      </div>
+      <div class="changelog-entry">
+        <div class="changelog-star">⌨️</div>
+        <div class="changelog-text"><strong>Input and shop QoL</strong> — typing in editors no longer triggers gameplay hotkeys, `G` opens Economy, `X` jumps to Sell tab, and seed buying supports Shift/Ctrl/Cmd/Alt quantity modifiers.</div>
+      </div>
+      <div class="changelog-entry">
+        <div class="changelog-star">♻️</div>
+        <div class="changelog-text"><strong>Robot→Player loop actions</strong> — one-click turnover now handles collect/sell/restock/distribute flow, and cycle behaviors can prep new ground by tilling when fields run out.</div>
+      </div>
+    </div>
+
+    <div style="border-top:1px solid var(--ui-border);margin:14px 0"></div>
+    <div class="changelog-version" style="font-size:8px">ROBO FARM  ·  v0.2.3</div>
     <div class="changelog-subtitle">"The Morning Edition" — the world gets a voice.</div>
 
     <div class="changelog-section">
@@ -781,9 +882,11 @@ if (t) {
       <button class="game-btn success" onclick="sellAll();buildInventoryModal()">💰 Sell All</button>
       <span class="inv-summary" id="inv-summary"></span>
     </div>
-    <div class="inv-section-label">YOUR BAG <span id="inv-slot-count"></span></div>
+    <div class="inv-section-label">YOUR SEEDS <span id="inv-seed-slot-count"></span></div>
+    <div class="inv-grid inv-grid-seeds" id="inv-player-seed-grid"></div>
+    <div class="inv-section-label" style="margin-top:10px">YOUR CROPS <span id="inv-crop-slot-count"></span></div>
     <div class="inv-grid" id="inv-player-grid"></div>
-    <div class="inv-section-label" style="margin-top:12px">ROBOTS <span>drag bag slot or hotbar seed onto a robot to GIVE · drag robot slot into YOUR BAG to collect</span></div>
+    <div class="inv-section-label" style="margin-top:12px">ROBOTS <span>drag seeds/crops onto a robot to GIVE · drag robot stacks into matching player grids to collect</span></div>
     <div id="inv-robots-list"></div>
   </div>
 </div>
@@ -801,9 +904,11 @@ if (t) {
   </div>
 </div>
 
+<script src="core.js"></script>
 <script src="rng.js"></script>
 <script src="world.js"></script>
 <script src="state.js"></script>
+<script src="progression.js"></script>
 <script src="input.js"></script>
 <script src="robots.js"></script>
 <script src="crops.js"></script>

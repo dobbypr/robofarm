@@ -5,6 +5,18 @@ let cropTick = 0;
 let _activeGrowthPass = null;
 const _growthPassQueue = [];
 
+function getHarvestYieldForTile(x, y, cropType) {
+  const cfg = S.crops[cropType];
+  if (!cfg) return 1;
+  const base = Math.max(1, Math.floor(cfg.yield || 1));
+  const fertility = (typeof getTileFertilityValue === 'function') ? getTileFertilityValue(x, y) : 50;
+
+  // Moderate fertility impact: slight downside for poor land, slight upside for rich land.
+  if (fertility < 35 && base > 1 && Math.random() < 0.1) return base - 1;
+  if (fertility > 75 && Math.random() < 0.15) return base + 1;
+  return base;
+}
+
 function normalizeCropHydration(crop) {
   if (!crop || typeof crop !== 'object') return;
   if (!Number.isFinite(crop.waterCount) || crop.waterCount < 0) crop.waterCount = 0;
@@ -38,7 +50,12 @@ function _queueGrowthPass(growEvery) {
     growEvery,
     growthBoost: Math.max(0.25, Number(S.time.cropGrowthMultiplier) || 1.35),
     dryRate: Math.max(0, Math.min(1, Number(S.time.dryGrowthRate ?? 0.45))),
-    weatherHydration: rainDay ? 1 : 0,
+    weatherHydration: (typeof getWeatherHydration === 'function')
+      ? Math.max(0, Math.min(1, getWeatherHydration()))
+      : (rainDay ? 1 : 0),
+    weatherGrowth: (typeof getWeatherGrowthMultiplier === 'function')
+      ? Math.max(0.5, getWeatherGrowthMultiplier())
+      : 1,
   });
 }
 
@@ -67,15 +84,12 @@ function _processGrowthPass(pass, tileBudget) {
       if (!cfg) continue;
       if (!normalizeCropState(crop, cfg)) continue;
 
-      if (crop.watered) {
-        crop.waterCount += 1;
-        crop.watered = false;
-      }
-
       const waterNeed = Math.max(1, Number(cfg.waterNeeded) || 1);
-      const hydration = Math.max(pass.weatherHydration, Math.min(1, crop.waterCount / waterNeed));
-      const growthRate = pass.dryRate + (1 - pass.dryRate) * hydration;
-      crop.growTimer += pass.growEvery * growthRate * pass.growthBoost;
+      const moistureBonus = (typeof getTileMoistureBonus === 'function') ? getTileMoistureBonus(x, y) : 0;
+      const hydration = Math.max(pass.weatherHydration, Math.min(1, (crop.waterCount + moistureBonus) / waterNeed));
+      const fertilityGrowth = (typeof getTileFertilityGrowthMult === 'function') ? getTileFertilityGrowthMult(x, y) : 1;
+      const growthRate = (pass.dryRate + (1 - pass.dryRate) * hydration) * fertilityGrowth;
+      crop.growTimer += pass.growEvery * growthRate * pass.growthBoost * pass.weatherGrowth;
 
       const stageMax = Math.max(1, (Math.floor(Number(cfg.stages) || 2) - 1));
       const stageTime = Math.max(1, Number(cfg.growTime) / stageMax);
@@ -122,8 +136,23 @@ function updateCrops() {
 let particles = [];
 const MAX_PARTICLES = S.display.particleCount === 'low' ? 50 : S.display.particleCount === 'medium' ? 150 : 300;
 
+function spawnDrivingDust(px, py) {
+  const count = 2 + Math.floor(Math.random() * 2);
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: px + (Math.random() - 0.5) * TILE * 0.8,
+      y: py + (Math.random() - 0.5) * TILE * 0.4,
+      vx: (Math.random() - 0.5) * 1.5,
+      vy: (Math.random() - 0.5) * 1.5,
+      life: 0.6 + Math.random() * 0.3,
+      size: 2 + Math.random() * 2,
+      color: '#b89c78',
+    });
+  }
+}
+
 function spawnParticles(px, py, type, count) {
-  if (particles.length > MAX_PARTICLES) return;
+  if (particles.length >= MAX_PARTICLES) return;
   for (let i = 0; i < count; i++) {
     const angle = Math.random() * Math.PI * 2;
     const speed = 1 + Math.random() * 2.5;

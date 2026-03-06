@@ -17,7 +17,7 @@ function _gazetteRng(seed) {
 /* ─── Content Pool ─── */
 const GAZETTE_POOL = {
 
-  /* WEATHER — always picks 1 per edition, filtered by rainDay */
+  /* WEATHER — always picks 1 per edition, filtered by weather type */
   weather: [
     /* rainy-day entries */
     { tag: 'rain', text: "The clouds showed up early. Good news for your crops — bad news for anyone who forgot their umbrella." },
@@ -27,6 +27,18 @@ const GAZETTE_POOL = {
     { tag: 'rain', text: "Rain's in. If you've been putting off watering, consider this problem solved." },
     { tag: 'rain', text: "Another rainy day on the plains. Locals say 'the rain costs nothing.' Economists at BuPop disagree." },
     { tag: 'rain', text: "Your crops are watered and you didn't lift a finger. Today is a good day." },
+    /* thunder-day entries */
+    { tag: 'thunder', text: "Thunder rolled over the farm before sunrise. Loud skies, well-watered fields." },
+    { tag: 'thunder', text: "Storm cells moving through with lightning activity. Keep your hat on and let the robots work." },
+    { tag: 'thunder', text: "Heavy thunderstorm conditions today. The land is noisy, but the crops are drinking deeply." },
+    /* hail-day entries */
+    { tag: 'hail', text: "Small hail reported across the county. Fields are soaked, and farmhands are staying under cover." },
+    { tag: 'hail', text: "Hail bursts expected through midday. Rough weather, but your irrigation problem is solved." },
+    { tag: 'hail', text: "Icy pellets over the tilled lots this morning. Weather desk advises sturdy hats and patience." },
+    /* snow-day entries */
+    { tag: 'snow', text: "Snowfall is blanketing the fields. Growth slows, but the farm keeps moving." },
+    { tag: 'snow', text: "Cold front locked in overnight. Snow on the ground, quiet skies, steady work." },
+    { tag: 'snow', text: "Winter snow continues today. The soil rests while your machines handle the routine." },
     /* clear-day entries */
     { tag: 'clear', text: "Clear skies today. Your crops are thirsty and only you — or your robots — can help." },
     { tag: 'clear', text: "Bright sun, zero clouds. The kind of day your watering can was made for." },
@@ -35,6 +47,7 @@ const GAZETTE_POOL = {
     { tag: 'clear', text: "Hot and dry. The soil remembers every missed watering. Your crops, however, do not forgive." },
     { tag: 'clear', text: "Clear skies mean clear work ahead. Get those fields watered before the roots complain." },
     { tag: 'clear', text: "Sunshine all day. Perfect conditions for farming — or for watching your robots farm while you plan your next expansion." },
+    { tag: 'cold', text: "Cold and dry conditions today. The fields are calm, and planning season is in full swing." },
     /* neutral entries — work any day */
     { tag: 'any', text: "Weather conditions: variable, as always. The land does what it wants. So do your robots." },
     { tag: 'any', text: "Today's conditions: perfectly farmable. No further comment from our meteorology desk." },
@@ -100,7 +113,7 @@ const GAZETTE_POOL = {
     { text: "ADVICE CORNER: Custom robot behaviors let you write your own automation logic. Find the option in the robot panel." },
     { text: "ADVICE CORNER: robot.memory persists between ticks. Build a state machine. Your robots will thank you — in crops." },
     { text: "AD: THE ROBO FARM EXCHANGE — Monitor crop prices. Time your sales. Don't just farm. Invest." },
-    { text: "ADVICE CORNER: Rain waters all tilled tiles automatically. On rainy days, redirect your robots to harvest instead." },
+    { text: "ADVICE CORNER: Rain, thunder, and hail water tilled tiles automatically. On wet days, redirect robots toward harvest routes." },
     { text: "ADVICE CORNER: Sunflowers grow slowly but sell well. Consider dedicating a corner to the long game." },
     { text: "AD: BASIC BOT — 8-tile radius, 3 inventory slots, reliable as the sunrise. The RFS workhorse." },
     { text: "ADVICE CORNER: Coins don't grow themselves. Neither do crops, technically. Get robots. Both problems solved." },
@@ -155,7 +168,7 @@ const GAZETTE_POOL = {
 };
 
 /* ─── generateGazette ─── */
-function generateGazette(day, season, rainDay, coins, robotArr) {
+function generateGazette(day, season, weatherType, coins, robotArr) {
   /* Day 1: fixed welcome edition */
   if (day === 1) {
     return [
@@ -167,11 +180,16 @@ function generateGazette(day, season, rainDay, coins, robotArr) {
 
   const rng = _gazetteRng(day);
   const blurbs = [];
+  const weatherKey = (typeof normalizeWeatherType === 'function')
+    ? normalizeWeatherType(weatherType)
+    : (weatherType ? 'rain' : 'clear');
+  const weatherTags = new Set(['any', weatherKey]);
+  if (weatherKey === 'thunder' || weatherKey === 'hail') weatherTags.add('rain');
+  if (weatherKey === 'snow') weatherTags.add('cold');
 
   /* 1. Weather (always 1) */
-  const weatherPool = GAZETTE_POOL.weather.filter(e =>
-    e.tag === 'any' || (rainDay ? e.tag === 'rain' : e.tag === 'clear')
-  );
+  let weatherPool = GAZETTE_POOL.weather.filter(e => weatherTags.has(e.tag));
+  if (weatherPool.length === 0) weatherPool = GAZETTE_POOL.weather;
   blurbs.push({
     category: 'WEATHER',
     text: weatherPool[Math.floor(rng() * weatherPool.length)].text,
@@ -223,13 +241,24 @@ function generateGazette(day, season, rainDay, coins, robotArr) {
 
 /* ─── Show / Close ─── */
 function showGazette() {
-  const blurbs = generateGazette(day, season, rainDay, coins, robots);
+  const activeWeather = (typeof normalizeWeatherType === 'function')
+    ? normalizeWeatherType(weatherType)
+    : (rainDay ? 'rain' : 'clear');
+  const blurbs = generateGazette(day, season, activeWeather, coins, robots);
 
-  document.getElementById('gazette-day').textContent     = day;
-  document.getElementById('gazette-season').textContent  = SEASONS[season % SEASONS.length];
-  document.getElementById('gazette-weather').textContent = rainDay ? '🌧 Rainy' : '☀️ Clear';
-
+  const dayEl = document.getElementById('gazette-day');
+  const seasonEl = document.getElementById('gazette-season');
+  const weatherEl = document.getElementById('gazette-weather');
   const body = document.getElementById('gazette-body');
+  const overlay = document.getElementById('gazette-overlay');
+  if (!dayEl || !seasonEl || !weatherEl || !body || !overlay) return;
+
+  dayEl.textContent = day;
+  seasonEl.textContent = SEASONS[season % SEASONS.length];
+  weatherEl.textContent = (typeof getWeatherSummary === 'function')
+    ? getWeatherSummary(activeWeather)
+    : (rainDay ? '🌧 Rainy' : '☀️ Clear');
+
   body.innerHTML = '';
   for (const blurb of blurbs) {
     const div = document.createElement('div');
@@ -240,7 +269,6 @@ function showGazette() {
     body.appendChild(div);
   }
 
-  const overlay = document.getElementById('gazette-overlay');
   overlay.classList.remove('hidden');
   /* small rAF delay so the transition fires after display:flex is applied */
   requestAnimationFrame(() => overlay.classList.add('visible'));
@@ -249,6 +277,7 @@ function showGazette() {
 
 function closeGazette() {
   const overlay = document.getElementById('gazette-overlay');
+  if (!overlay) return;
   overlay.classList.remove('visible');
   document.body.classList.remove('show-system-cursor');
   if (typeof syncCursorMode === 'function') syncCursorMode();
