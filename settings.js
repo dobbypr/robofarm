@@ -378,6 +378,24 @@ const SETTINGS = {
         spawnOffsetX: 3,
         spawnOffsetY: 0,
     },
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // FEATURE FLAGS  (dev / experimental)
+    // Toggle these to enable work-in-progress features without shipping
+    // broken code. All flags default false — safe for production.
+    //
+    // Override at runtime:  RF_FLAGS.set('godMode', true)
+    // Override via URL:     index.html?flags=debugOverlay,godMode
+    // Single flag via URL:  index.html?flag_godMode=true
+    // ═══════════════════════════════════════════════════════════════════════
+    flags: {
+        debugOverlay:    false, // On-screen FPS, tick, day, weather, coins info
+        godMode:         false, // Unlimited coins; instant robot charge
+        fastGrowth:      false, // Crops grow every tick (great for crop testing)
+        noWeather:       false, // Freeze weather — stays 'clear' all game
+        verboseLogs:     false, // console.log game events (growth, sales, robots)
+        showChunkBounds: false, // Visualize render-cache chunk boundaries
+    },
 };
 (function () {
     const s = SETTINGS;
@@ -672,5 +690,29 @@ const SETTINGS = {
                 s.customBehaviors[k] = v;
         }
     }
+    // Feature flags: apply defaults, then honour URL overrides.
+    // Supports ?flags=debugOverlay,godMode  and  ?flag_godMode=true|false|1|0
+    s.flags = Object.assign({
+        debugOverlay:    false,
+        godMode:         false,
+        fastGrowth:      false,
+        noWeather:       false,
+        verboseLogs:     false,
+        showChunkBounds: false,
+    }, s.flags || {});
+    try {
+        const _params = new URLSearchParams(window.location.search);
+        const _bulk = _params.get('flags');
+        if (_bulk) _bulk.split(',').forEach(function(f) {
+            const k = f.trim();
+            if (k in s.flags) s.flags[k] = true;
+        });
+        _params.forEach(function(v, k) {
+            if (k.startsWith('flag_')) {
+                const name = k.slice(5);
+                if (name in s.flags) s.flags[name] = (v !== '0' && v !== 'false');
+            }
+        });
+    } catch (_) {}
     window.GAME_SETTINGS = s;
 })();
