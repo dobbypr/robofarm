@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Robo Farm Browser Diagnostics</title>
+<link rel="stylesheet" href="tests.css">
+<script src="settings.js"></script>
+<script src="test/test-assert.js"></script>
+<script src="test/browser-framework.js"></script>
+<script src="test/browser-manifest.js"></script>
+<script src="test/browser-runner.js"></script>
+</head>
+<body>
+  <header class="diag-header">
+    <div>
+      <div class="diag-kicker">Robo Farm Diagnostics</div>
+      <h1>Browser Test Runner</h1>
+    </div>
+    <div class="diag-summary-grid" id="diag-summary-grid">
+      <div class="summary-cell">
+        <span class="summary-label">Suites</span>
+        <span class="summary-value" id="summary-suites">0</span>
+      </div>
+      <div class="summary-cell">
+        <span class="summary-label">Runnable</span>
+        <span class="summary-value" id="summary-runnable">0</span>
+      </div>
+      <div class="summary-cell summary-pass">
+        <span class="summary-label">Passed</span>
+        <span class="summary-value" id="summary-passed">0</span>
+      </div>
+      <div class="summary-cell summary-fail">
+        <span class="summary-label">Failed</span>
+        <span class="summary-value" id="summary-failed">0</span>
+      </div>
+      <div class="summary-cell summary-skip">
+        <span class="summary-label">Skipped</span>
+        <span class="summary-value" id="summary-skipped">0</span>
+      </div>
+      <div class="summary-cell">
+        <span class="summary-label">Status</span>
+        <span class="summary-value summary-status" id="summary-status">BOOTING</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="diag-main">
+    <section class="diag-panel">
+      <div class="panel-head">
+        <div>Suite / Test Status</div>
+        <div id="summary-progress">Waiting for browser runner…</div>
+      </div>
+      <div class="row-list" id="results"></div>
+    </section>
+
+    <section class="diag-panel thumbs-panel hidden" id="thumbs-up-panel" aria-live="polite">
+      <div class="thumbs-mark">👍</div>
+      <div>
+        <div class="thumbs-title">All runnable browser diagnostics passed.</div>
+        <blockquote class="thumbs-quote">“Color is my day-long obsession, joy and torment.”</blockquote>
+        <div class="thumbs-attrib">— Claude Monet</div>
+      </div>
+    </section>
+  </main>
+
+  <details class="log-panel" id="log-panel" open>
+    <summary>Detailed log</summary>
+    <pre id="log-output"></pre>
+  </details>
+</body>
+</html>
