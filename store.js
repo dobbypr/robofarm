@@ -1,0 +1,74 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+ * STATE STORE
+ * Observable wrapper around existing globals — adds change notification
+ * and optional validation without replacing the underlying variables.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+(function initStore(global) {
+  if (!global || global.GameStore) return;
+
+  const _watched = {};   // { key: { get, set, validate? } }
+
+  const Store = {
+    /** Register a state key to watch. */
+    watch(key, desc) {
+      if (!desc || (typeof desc !== 'object' && typeof desc !== 'function')) {
+        throw new TypeError('GameStore.watch: descriptor for key "' + key + '" must be an object.');
+      }
+      if (typeof desc.get !== 'function' || typeof desc.set !== 'function') {
+        throw new TypeError('GameStore.watch: descriptor for key "' + key + '" must have "get" and "set" functions.');
+      }
+      if (typeof desc.validate !== 'undefined' && typeof desc.validate !== 'function') {
+        throw new TypeError('GameStore.watch: "validate" for key "' + key + '" must be a function if provided.');
+      }
+      _watched[key] = desc;
+    },
+
+    get(key) {
+      const w = _watched[key];
+      return w ? w.get() : undefined;
+    },
+
+    set(key, value, reason) {
+      const w = _watched[key];
+      if (!w) return false;
+      if (w.validate && !w.validate(value)) return false;
+      const prev = w.get();
+      w.set(value);
+      if (global.GameBus) {
+        global.GameBus.emit('state:' + key, { key, prev, next: w.get(), reason });
+      }
+      return true;
+    },
+
+    /** Convenience: delta for numeric state. */
+    add(key, delta, reason) {
+      // Only operate on watched keys to avoid undefined + delta => NaN
+      if (!Store.has(key)) return false;
+
+      const current = Number(Store.get(key));
+      const change = Number(delta);
+
+      // Enforce numeric semantics: reject non-finite values
+      if (!Number.isFinite(current) || !Number.isFinite(change)) {
+        return false;
+      }
+
+      const next = current + change;
+      if (!Number.isFinite(next)) {
+        return false;
+      }
+
+      return Store.set(key, next, reason);
+    },
+
+    has(key) {
+      return !!_watched[key];
+    },
+
+    keys() {
+      return Object.keys(_watched);
+    },
+  };
+
+  global.GameStore = Store;
+})(typeof window !== 'undefined' ? window : globalThis);

@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
  * BFS PATHFINDING
  * ═══════════════════════════════════════════════════════════════════════════ */
-const _robotsNormalizeCropType = window.RF_UTIL?.normalizeCropType || (type => (typeof type === 'string' && S.crops[type]) ? type : null);
+const _robotsNormalizeCropType = RF_UTIL.normalizeCropType;
 const _robotsDefaultCropType = () => Object.keys(S.crops || {})[0] || 'wheat';
 
 function _tileIdx(x, y) { return y * WW + x; }

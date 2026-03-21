@@ -4,7 +4,8 @@
   "version": "0.2.4",
   "description": "Robo Farm TypeScript transpile workflow for car-related runtime files.",
   "scripts": {
-    "build:ts": "tsc -p tsconfig.json && cp .ts-build/settings.js settings.js && cp .ts-build/state.js state.js && cp .ts-build/loop.js loop.js && cp .ts-build/menu.js menu.js && cp .ts-build/io.js io.js && cp .ts-build/render.js render.js"
+    "build:ts": "tsc -p tsconfig.json && cp .ts-build/settings.js settings.js && cp .ts-build/state.js state.js && cp .ts-build/loop.js loop.js && cp .ts-build/menu.js menu.js && cp .ts-build/io.js io.js && cp .ts-build/render.js render.js",
+    "test": "node test/run.js"
   },
   "devDependencies": {
     "typescript": "^5.9.2"
