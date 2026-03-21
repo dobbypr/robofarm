@@ -42,7 +42,7 @@ function it(name, fn) {
     console.log(`  \x1b[32m✓\x1b[0m ${_current} › ${name}`);
   } catch (e) {
     _fail++;
-    console.log(`  \x1b[31m✗\x1b[0m ${_current} › ${name}: ${e.message}`);
+    console.log(`  \x1b[31m✗\x1b[0m ${_current} › ${name}: ${e.stack || e.message}`);
   }
 }
 
