@@ -28,7 +28,15 @@
       const arr = _listeners[event];
       if (!arr) return;
       for (let i = arr.length - 1; i >= 0; i--) {
-        arr[i].fn(data);
+        const handler = arr[i];
+        if (!handler) continue;
+        try {
+          handler.fn(data);
+        } catch (err) {
+          if (typeof console !== 'undefined' && typeof console.error === 'function') {
+            console.error('GameBus listener error for event "' + event + '":', err);
+          }
+        }
         if (arr[i] && arr[i].once) arr.splice(i, 1);
       }
     },
