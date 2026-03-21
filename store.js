@@ -42,7 +42,23 @@
 
     /** Convenience: delta for numeric state. */
     add(key, delta, reason) {
-      return Store.set(key, Store.get(key) + delta, reason);
+      // Only operate on watched keys to avoid undefined + delta => NaN
+      if (!Store.has(key)) return false;
+
+      const current = Number(Store.get(key));
+      const change = Number(delta);
+
+      // Enforce numeric semantics: reject non-finite values
+      if (!Number.isFinite(current) || !Number.isFinite(change)) {
+        return false;
+      }
+
+      const next = current + change;
+      if (!Number.isFinite(next)) {
+        return false;
+      }
+
+      return Store.set(key, next, reason);
     },
 
     has(key) {
