@@ -11,6 +11,15 @@
   const Store = {
     /** Register a state key to watch. */
     watch(key, desc) {
+      if (!desc || (typeof desc !== 'object' && typeof desc !== 'function')) {
+        throw new TypeError('GameStore.watch: descriptor for key "' + key + '" must be an object.');
+      }
+      if (typeof desc.get !== 'function' || typeof desc.set !== 'function') {
+        throw new TypeError('GameStore.watch: descriptor for key "' + key + '" must have "get" and "set" functions.');
+      }
+      if (typeof desc.validate !== 'undefined' && typeof desc.validate !== 'function') {
+        throw new TypeError('GameStore.watch: "validate" for key "' + key + '" must be a function if provided.');
+      }
       _watched[key] = desc;
     },
 
