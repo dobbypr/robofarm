@@ -3,7 +3,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
  * GAME LOOP
  * ═══════════════════════════════════════════════════════════════════════════ */
-const _loopGetEl = window.RF_UTIL?.getEl || (id => document.getElementById(id));
+const _loopGetEl = RF_UTIL.getEl;
 function _showDayBanner() {
     if (S.display.showDayBanner === false)
         return;

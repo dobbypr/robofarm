@@ -192,9 +192,9 @@ function handleWorldImportFile(input) {
     input.value = '';
 }
 function applyGameSave(save) {
-    const _clamp = (n, mn, mx) => Math.max(mn, Math.min(mx, n));
+    const _clamp = RF_UTIL.clamp;
     const _numOr = (v, d) => Number.isFinite(v) ? v : d;
-    const _normalizeCropType = window.RF_UTIL?.normalizeCropType || (type => (typeof type === 'string' && S.crops[type]) ? type : null);
+    const _normalizeCropType = RF_UTIL.normalizeCropType;
     const _defaultCropType = Object.keys(S.crops || {})[0] || 'wheat';
     const _sanitizeCropBag = (dict) => {
         const out = {};

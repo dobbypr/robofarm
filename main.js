@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
  * DRAG-TO-USE TOOLS  (QoL — hold mouse to apply tool to multiple tiles)
  * ═══════════════════════════════════════════════════════════════════════════ */
-const _mainGetEl = window.RF_UTIL?.getEl || (id => document.getElementById(id));
+const _mainGetEl = RF_UTIL.getEl;
 
 let mouseIsDown = false;
 let lastDragTile = { x: -1, y: -1 };

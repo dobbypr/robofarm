@@ -293,8 +293,7 @@ const ROBOT_INV_CAPACITY = 32;
 const ROBOT_INV_SLOTS = 3;
 let invSelectedStack = null;
 let invDragPayload = null;
-const _findRobotById = id =>
-  (window.RF_UTIL?.getRobotById ? window.RF_UTIL.getRobotById(id, robots) : robots.find(r => r.id === id));
+const _findRobotById = id => RF_UTIL.getRobotById(id, robots);
 
 function _sumDict(dict) {
   return Object.values(dict || {}).reduce((s, v) => s + (Number(v) || 0), 0);

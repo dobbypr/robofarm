@@ -1,9 +1,9 @@
 /* ═══════════════════════════════════════════════════════════════════════════
  * TILE CLICK HANDLER
  * ═══════════════════════════════════════════════════════════════════════════ */
-const _economyGetRobotById = window.RF_UTIL?.getRobotById || ((id, list) => (Array.isArray(list) ? list.find(r => r.id === id) : null));
-const _economyGetRobotAtTile = window.RF_UTIL?.getRobotAtTile || ((x, y, list) => (Array.isArray(list) ? list.find(r => r.tileX === x && r.tileY === y) : null));
-const _economyNormalizeCropType = window.RF_UTIL?.normalizeCropType || (type => (typeof type === 'string' && S.crops[type]) ? type : null);
+const _economyGetRobotById = RF_UTIL.getRobotById;
+const _economyGetRobotAtTile = RF_UTIL.getRobotAtTile;
+const _economyNormalizeCropType = RF_UTIL.normalizeCropType;
 
 function handleTileClick(tx, ty, e) {
   if (!inBounds(tx, ty)) return;
